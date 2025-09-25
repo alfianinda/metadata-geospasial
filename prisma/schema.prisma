@@ -1,0 +1,268 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  metadata  Metadata[]
+
+  @@map("users")
+}
+
+model Metadata {
+  id                String   @id @default(cuid())
+
+  // MD_Metadata Root (ISO 19115)
+  fileIdentifier    String?  // unique identifier for metadata
+  language          String?  // metadata language
+  characterSet      String?  // utf8, iso-8859-1, etc.
+  parentIdentifier  String?  // identifier of parent metadata
+  hierarchyLevel    String?  // dataset, series, service
+  hierarchyLevelName String? // name of hierarchy level
+  contactName       String?  // metadata contact name
+  contactEmail      String?  // metadata contact email
+  dateStamp         DateTime? // metadata creation date
+  metadataStandardName String? // ISO 19115
+  metadataStandardVersion String? // 2003/Cor.1:2006
+  dataSetURI        String?  // URI for dataset access
+  locale            String?  // locale information
+
+  // Basic Information (ISO 19115 Mandatory)
+  title             String
+  abstract          String?
+  purpose           String?
+  status            String?  // completed, ongoing, planned, etc.
+  updateFrequency   String?  // continual, daily, weekly, etc.
+
+  // Identification Information (ISO 19115)
+  citation          String?  // citation information
+  credit            String?  // credits
+  supplementalInfo  String?  // additional information
+
+  // Keywords and Topics
+  keywords          String?
+  topicCategory     String?  // ISO 19115 topic categories
+  themeKeywords     String?  // GEMET, INSPIRE themes
+
+  // Spatial Information (ISO 19115 Mandatory)
+  boundingBox       Json?    // {minX, minY, maxX, maxY, crs}
+  spatialResolution String?
+  coordinateSystem  String?  // EPSG code
+  geographicExtent  String?  // Place names
+  verticalExtent    Json?    // {minZ, maxZ, unit}
+
+  // Temporal Information
+  temporalStart     DateTime?
+  temporalEnd       DateTime?
+  dateType          String?  // creation, publication, revision
+  temporalResolution String? // temporal resolution
+
+  // Responsible Parties (ISO 19115 Mandatory)
+  pointOfContact    String?  // point of contact for dataset
+  contactOrganization String?
+  contactRole       String?  // pointOfContact, custodian, etc.
+  contactPhone      String?
+  contactAddress    String?
+
+  // Metadata Contact
+  metadataContactName String?
+  metadataContactEmail String?
+  metadataContactOrganization String?
+
+  // Distribution Information
+  distributionFormat String?
+  distributor       String?  // distributor information
+  onlineResource    String?
+  transferOptions   Json?    // {protocol, name, description, url}
+
+  // Data Quality
+  scope             String?  // dataset, series, feature
+  lineage           String?
+  accuracy          String?
+  completeness      String?
+  consistency       String?
+  positionalAccuracy String?
+  conformity        Json?   // {specification, explanation, pass}
+
+  // Constraints
+  useConstraints    String?  // usage restrictions
+  accessConstraints String?  // access restrictions
+  otherConstraints  String?  // other restrictions
+
+  // Reference System
+  referenceSystem   String?  // coordinate reference system
+  referenceSystemType String? // geodetic, vertical, temporal
+  projection        String?  // map projection
+
+  // Content Information
+  featureTypes      String?  // feature type names
+  attributeInfo     Json?    // attribute descriptions
+  contentType       String?  // image, thematicClassification, physicalMeasurement
+
+  // Spatial Representation Information (ISO 19115)
+  spatialRepresentationType String?  // vector, grid, textTable, etc.
+  axisDimensionProperties   String?  // X: 2D, Y: 2D, Z: optional
+  cellGeometry              String?  // point, area for grid data
+  transformationParameterAvailability Boolean? // transformation parameters available
+  checkPointAvailability     Boolean? // check points available
+  controlPointAvailability   Boolean? // control points available
+  orientationParameterAvailability Boolean? // orientation parameters available
+  georectified              Boolean? // whether data is georectified
+  georeferenceable          Boolean? // whether data is georeferenceable
+
+  // SNI Specific Fields
+  sniCompliant      Boolean  @default(false)
+  sniVersion        String?
+  sniStandard       String?  // SNI number
+  bahasa            String?  @default("id") // Language: id, en
+
+  // File Information
+  originalFileName  String?
+  fileSize          BigInt?
+  featureCount      Int?
+  geometryType      String?  // Point, LineString, Polygon, etc.
+  dataFormat        String?  // GeoJSON, Shapefile, etc.
+
+  // Processing Information
+  processingLevel   String?  // raw, processed, etc.
+  processingHistory String?
+  graphicOverview   String?  // URL to graphic overview
+  resourceSpecificUsage String? // specific usage of resource
+
+  // XML Metadata
+  xmlContent        String?
+  xmlSchema         String?  // ISO 19139, SNI, etc.
+
+  // Status and Workflow
+  isPublished       Boolean  @default(false)
+  publishedAt       DateTime?
+  reviewStatus      String?  @default("draft") // draft, reviewed, approved
+  approvalDate      DateTime?
+
+  // CKAN Integration
+  ckanId            String?
+  ckanUrl           String?
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files             File[]
+  vocabularies      MetadataVocabulary[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("metadata")
+}
+
+model File {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimetype    String
+  size        Int
+  path        String
+  url         String?
+
+  // Relations
+  metadataId  String
+  metadata    Metadata @relation(fields: [metadataId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@map("files")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum MetadataStatus {
+  DRAFT
+  REVIEWED
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DateType {
+  CREATION
+  PUBLICATION
+  REVISION
+  LAST_UPDATE
+}
+
+enum TopicCategory {
+  FARMING
+  BIOGEOGRAPHIC
+  BOUNDARIES
+  CLIMATOLOGY
+  ECONOMY
+  ELEVATION
+  ENVIRONMENT
+  GEOSCIENTIFIC
+  HEALTH
+  IMAGERY
+  INTELLIGENCE
+  INLAND_WATERS
+  LOCATION
+  OCEANS
+  PLANNING
+  SOCIETY
+  STRUCTURE
+  TRANSPORTATION
+  UTILITIES
+}
+
+enum Language {
+  ID  // Indonesian
+  EN  // English
+  MS  // Malay
+}
+
+model ControlledVocabulary {
+  id          String   @id @default(cuid())
+  category    String   // e.g., "topicCategory", "themeKeywords", "status"
+  code        String   // e.g., "boundaries", "administrative_units"
+  label       String   // e.g., "Boundaries", "Administrative Units"
+  description String?
+  language    Language @default(ID)
+
+  // Relations
+  metadata    MetadataVocabulary[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([category, code, language])
+  @@map("controlled_vocabulary")
+}
+
+model MetadataVocabulary {
+  id          String   @id @default(cuid())
+  metadataId  String
+  vocabularyId String
+
+  metadata    Metadata @relation(fields: [metadataId], references: [id], onDelete: Cascade)
+  vocabulary  ControlledVocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([metadataId, vocabularyId])
+  @@map("metadata_vocabulary")
+}

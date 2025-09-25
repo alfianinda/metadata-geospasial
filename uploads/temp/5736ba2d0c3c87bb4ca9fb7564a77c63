@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [117.1538, -0.5022]
+      },
+      "properties": {
+        "nama": "Titik Contoh di IKN",
+        "kategori": "uji_upload"
+      }
+    }
+  ]
+}
