@@ -131,50 +131,54 @@ export function generateISO19139XML(metadata: MetadataData): string {
     .ele('gco:CharacterString')
     .txt('Dataset')
 
-  // Contact (Data Owner)
-  if (metadata.contactName || metadata.contactEmail || metadata.contactOrganization) {
-    const contact = root.ele('gmd:contact')
-      .ele('gmd:CI_ResponsibleParty')
+  // Contact (Data Owner) - Always generate for valid XML
+  const contact = root.ele('gmd:contact')
+    .ele('gmd:CI_ResponsibleParty')
 
-    if (metadata.contactName) {
-      contact.ele('gmd:individualName')
-        .ele('gco:CharacterString')
-        .txt(metadata.contactName)
-    }
-
-    if (metadata.contactOrganization) {
-      contact.ele('gmd:organisationName')
-        .ele('gco:CharacterString')
-        .txt(metadata.contactOrganization)
-    }
-
-    // Contact Info
-    if (metadata.contactEmail || metadata.contactPhone || metadata.contactAddress) {
-      const contactInfo = contact.ele('gmd:contactInfo')
-        .ele('gmd:CI_Contact')
-
-      if (metadata.contactPhone || metadata.contactEmail || metadata.contactAddress) {
-        const address = contactInfo.ele('gmd:address')
-          .ele('gmd:CI_Address')
-
-        if (metadata.contactEmail) {
-          address.ele('gmd:electronicMailAddress')
-            .ele('gco:CharacterString')
-            .txt(metadata.contactEmail)
-        }
-
-        if (metadata.contactAddress) {
-          address.ele('gmd:deliveryPoint')
-            .ele('gco:CharacterString')
-            .txt(metadata.contactAddress)
-        }
-      }
-    }
-
-    contact.ele('gmd:role')
-      .ele('gmd:CI_RoleCode', { codeListValue: metadata.contactRole || 'pointOfContact' })
-      .txt(metadata.contactRole || 'pointOfContact')
+  if (metadata.contactName) {
+    contact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactName)
+  } else {
+    // Fallback for draft metadata
+    contact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt('Unknown Contact')
   }
+
+  if (metadata.contactOrganization) {
+    contact.ele('gmd:organisationName')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactOrganization)
+  }
+
+  // Contact Info - Always generate with fallback
+  const contactInfo = contact.ele('gmd:contactInfo')
+    .ele('gmd:CI_Contact')
+
+  const address = contactInfo.ele('gmd:address')
+    .ele('gmd:CI_Address')
+
+  if (metadata.contactEmail) {
+    address.ele('gmd:electronicMailAddress')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactEmail)
+  } else {
+    // Fallback for draft metadata
+    address.ele('gmd:electronicMailAddress')
+      .ele('gco:CharacterString')
+      .txt('contact@example.com')
+  }
+
+  if (metadata.contactAddress) {
+    address.ele('gmd:deliveryPoint')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactAddress)
+  }
+
+  contact.ele('gmd:role')
+    .ele('gmd:CI_RoleCode', { codeListValue: metadata.contactRole || 'pointOfContact' })
+    .txt(metadata.contactRole || 'pointOfContact')
 
   // Date Stamp
   root.ele('gmd:dateStamp')
@@ -212,7 +216,7 @@ export function generateISO19139XML(metadata: MetadataData): string {
 
   citation.ele('gmd:title')
     .ele('gco:CharacterString')
-    .txt(metadata.title)
+    .txt(metadata.title || 'Untitled Dataset')
 
   // Citation Date
   const citationDate = citation.ele('gmd:date')
@@ -559,50 +563,54 @@ export function generateSNIXML(metadata: MetadataData): string {
     .ele('gco:CharacterString')
     .txt(metadata.bahasa || 'id')
 
-  // Contact (Data Owner)
-  if (metadata.contactName || metadata.contactEmail || metadata.contactOrganization) {
-    const contact = root.ele('gmd:contact')
-      .ele('gmd:CI_ResponsibleParty')
+  // Contact (Data Owner) - Always generate for valid XML
+  const contact = root.ele('gmd:contact')
+    .ele('gmd:CI_ResponsibleParty')
 
-    if (metadata.contactName) {
-      contact.ele('gmd:individualName')
-        .ele('gco:CharacterString')
-        .txt(metadata.contactName)
-    }
-
-    if (metadata.contactOrganization) {
-      contact.ele('gmd:organisationName')
-        .ele('gco:CharacterString')
-        .txt(metadata.contactOrganization)
-    }
-
-    // Contact Info
-    if (metadata.contactEmail || metadata.contactPhone || metadata.contactAddress) {
-      const contactInfo = contact.ele('gmd:contactInfo')
-        .ele('gmd:CI_Contact')
-
-      if (metadata.contactPhone || metadata.contactEmail || metadata.contactAddress) {
-        const address = contactInfo.ele('gmd:address')
-          .ele('gmd:CI_Address')
-
-        if (metadata.contactEmail) {
-          address.ele('gmd:electronicMailAddress')
-            .ele('gco:CharacterString')
-            .txt(metadata.contactEmail)
-        }
-
-        if (metadata.contactAddress) {
-          address.ele('gmd:deliveryPoint')
-            .ele('gco:CharacterString')
-            .txt(metadata.contactAddress)
-        }
-      }
-    }
-
-    contact.ele('gmd:role')
-      .ele('gmd:CI_RoleCode', { codeListValue: metadata.contactRole || 'pointOfContact' })
-      .txt(metadata.contactRole || 'pointOfContact')
+  if (metadata.contactName) {
+    contact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactName)
+  } else {
+    // Fallback for draft metadata
+    contact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt('Unknown Contact')
   }
+
+  if (metadata.contactOrganization) {
+    contact.ele('gmd:organisationName')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactOrganization)
+  }
+
+  // Contact Info - Always generate with fallback
+  const contactInfo = contact.ele('gmd:contactInfo')
+    .ele('gmd:CI_Contact')
+
+  const address = contactInfo.ele('gmd:address')
+    .ele('gmd:CI_Address')
+
+  if (metadata.contactEmail) {
+    address.ele('gmd:electronicMailAddress')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactEmail)
+  } else {
+    // Fallback for draft metadata
+    address.ele('gmd:electronicMailAddress')
+      .ele('gco:CharacterString')
+      .txt('contact@example.com')
+  }
+
+  if (metadata.contactAddress) {
+    address.ele('gmd:deliveryPoint')
+      .ele('gco:CharacterString')
+      .txt(metadata.contactAddress)
+  }
+
+  contact.ele('gmd:role')
+    .ele('gmd:CI_RoleCode', { codeListValue: metadata.contactRole || 'pointOfContact' })
+    .txt(metadata.contactRole || 'pointOfContact')
 
   // Metadata Contact (SNI Specific)
   if (metadata.metadataContactName || metadata.metadataContactEmail || metadata.metadataContactOrganization) {
@@ -673,7 +681,7 @@ export function generateSNIXML(metadata: MetadataData): string {
 
   citation.ele('gmd:title')
     .ele('gco:CharacterString')
-    .txt(metadata.title)
+    .txt(metadata.title || 'Untitled Dataset')
 
   // Citation Date
   const citationDate = citation.ele('gmd:date')

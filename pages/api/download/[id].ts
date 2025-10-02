@@ -21,17 +21,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Check if user is authenticated
     const token = req.headers.authorization?.replace('Bearer ', '')
     let userId = null
+    let user = null
 
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
         userId = decoded.userId
+        console.log('Decoded userId from token:', userId)
+        // Get user details
+        user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, role: true }
+        })
+        console.log('User found:', user ? { id: user.id, role: user.role } : 'null')
       } catch (error) {
+        console.error('Token verification failed:', error)
         // Invalid token, treat as unauthenticated
       }
+    } else {
+      console.log('No token provided in request headers')
     }
 
     // Get metadata from database
+    console.log('Looking up metadata with id:', id)
     const metadata = await prisma.metadata.findUnique({
       where: { id },
       include: {
@@ -40,63 +52,130 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     })
 
+    console.log('Metadata found:', metadata ? {
+      id: metadata.id,
+      title: metadata.title,
+      isPublished: metadata.isPublished,
+      userId: metadata.userId
+    } : 'null')
+
     if (!metadata) {
+      console.log('Metadata not found with id:', id)
       return res.status(404).json({ message: 'Metadata tidak ditemukan' })
     }
 
     // Check if user has permission to access this metadata
-    if (!metadata.isPublished && metadata.userId !== userId) {
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN'
+    console.log('Access control check:')
+    console.log('- metadata.isPublished:', metadata.isPublished)
+    console.log('- user?.role:', user?.role)
+    console.log('- isAdmin:', isAdmin)
+    console.log('- metadata.userId:', metadata.userId)
+    console.log('- userId:', userId)
+    console.log('- metadata.userId !== userId:', metadata.userId !== userId)
+
+    // Allow access if: metadata is published OR user is admin OR user is the owner
+    const hasAccess = metadata.isPublished || isAdmin || metadata.userId === userId
+    console.log('- hasAccess:', hasAccess)
+
+    if (!hasAccess) {
+      console.log('Access denied: draft metadata, not admin, and not owner')
       return res.status(403).json({ message: 'Akses ditolak' })
     }
+    console.log('Access granted')
 
     // Convert null values to undefined for compatibility with MetadataData interface
-    const metadataData = {
-      ...metadata,
-      abstract: metadata.abstract || undefined,
-      purpose: metadata.purpose || undefined,
-      status: metadata.status || undefined,
-      updateFrequency: metadata.updateFrequency || undefined,
-      keywords: metadata.keywords ? metadata.keywords.split(',').map(k => k.trim()) : undefined,
-      topicCategory: metadata.topicCategory || undefined,
-      themeKeywords: metadata.themeKeywords ? metadata.themeKeywords.split(',').map(k => k.trim()) : undefined,
-      boundingBox: metadata.boundingBox as any || undefined,
-      spatialResolution: metadata.spatialResolution || undefined,
-      coordinateSystem: metadata.coordinateSystem || undefined,
-      geographicExtent: metadata.geographicExtent || undefined,
-      temporalStart: metadata.temporalStart || undefined,
-      temporalEnd: metadata.temporalEnd || undefined,
-      dateType: metadata.dateType || undefined,
-      dateStamp: metadata.dateStamp || undefined,
-      contactName: metadata.contactName || undefined,
-      contactEmail: metadata.contactEmail || undefined,
-      contactOrganization: metadata.contactOrganization || undefined,
-      contactRole: metadata.contactRole || undefined,
-      contactPhone: metadata.contactPhone || undefined,
-      contactAddress: metadata.contactAddress || undefined,
-      metadataContactName: metadata.metadataContactName || undefined,
-      metadataContactEmail: metadata.metadataContactEmail || undefined,
-      metadataContactOrganization: metadata.metadataContactOrganization || undefined,
-      distributionFormat: metadata.distributionFormat || undefined,
-      onlineResource: metadata.onlineResource || undefined,
-      transferOptions: metadata.transferOptions as any || undefined,
-      lineage: metadata.lineage || undefined,
-      accuracy: metadata.accuracy || undefined,
-      completeness: metadata.completeness || undefined,
-      consistency: metadata.consistency || undefined,
-      useConstraints: metadata.useConstraints || undefined,
-      accessConstraints: metadata.accessConstraints || undefined,
-      otherConstraints: metadata.otherConstraints || undefined,
-      featureCount: metadata.featureCount || undefined,
-      fileSize: metadata.fileSize || undefined,
-      geometryType: metadata.geometryType || undefined,
-      dataFormat: metadata.dataFormat || undefined,
-      processingLevel: metadata.processingLevel || undefined,
-      sniCompliant: metadata.sniCompliant || undefined,
-      sniVersion: metadata.sniVersion || undefined,
-      sniStandard: metadata.sniStandard || undefined,
-      bahasa: metadata.bahasa || undefined,
-      fileIdentifier: metadata.id
-    }
+     const metadataData = {
+       ...metadata,
+       parentIdentifier: metadata.parentIdentifier || undefined,
+       hierarchyLevel: metadata.hierarchyLevel || undefined,
+       hierarchyLevelName: metadata.hierarchyLevelName || undefined,
+       characterSet: metadata.characterSet || undefined,
+       supplementalInfo: metadata.supplementalInfo || undefined,
+       scope: metadata.scope || undefined,
+       abstract: metadata.abstract || undefined,
+       purpose: metadata.purpose || undefined,
+       status: metadata.status || undefined,
+       updateFrequency: metadata.updateFrequency || undefined,
+       keywords: metadata.keywords ? metadata.keywords.split(',').map(k => k.trim()) : undefined,
+       topicCategory: metadata.topicCategory || undefined,
+       themeKeywords: metadata.themeKeywords ? metadata.themeKeywords.split(',').map(k => k.trim()) : undefined,
+       boundingBox: (() => {
+         if (!metadata.boundingBox) return undefined;
+         if (typeof metadata.boundingBox === 'object') return metadata.boundingBox;
+         if (typeof metadata.boundingBox === 'string') {
+           try {
+             return JSON.parse(metadata.boundingBox);
+           } catch (e) {
+             console.error('Failed to parse boundingBox:', metadata.boundingBox);
+             return undefined;
+           }
+         }
+         return undefined;
+       })(),
+       spatialResolution: metadata.spatialResolution || undefined,
+       coordinateSystem: metadata.coordinateSystem || undefined,
+       geographicExtent: metadata.geographicExtent || undefined,
+       temporalStart: metadata.temporalStart ? new Date(metadata.temporalStart) : undefined,
+       temporalEnd: metadata.temporalEnd ? new Date(metadata.temporalEnd) : undefined,
+       dateType: metadata.dateType || undefined,
+       dateStamp: metadata.dateStamp ? new Date(metadata.dateStamp) : undefined,
+       contactName: metadata.contactName || undefined,
+       contactEmail: metadata.contactEmail || undefined,
+       contactOrganization: metadata.contactOrganization || undefined,
+       contactRole: metadata.contactRole || undefined,
+       contactPhone: metadata.contactPhone || undefined,
+       contactAddress: metadata.contactAddress || undefined,
+       metadataContactName: metadata.metadataContactName || undefined,
+       metadataContactEmail: metadata.metadataContactEmail || undefined,
+       metadataContactOrganization: metadata.metadataContactOrganization || undefined,
+       distributionFormat: metadata.distributionFormat || undefined,
+       onlineResource: metadata.onlineResource || undefined,
+       transferOptions: (() => {
+         if (!metadata.transferOptions) return undefined;
+         if (Array.isArray(metadata.transferOptions)) return metadata.transferOptions;
+         if (typeof metadata.transferOptions === 'string') {
+           try {
+             const parsed = JSON.parse(metadata.transferOptions);
+             return Array.isArray(parsed) ? parsed : undefined;
+           } catch (e) {
+             console.error('Failed to parse transferOptions:', metadata.transferOptions);
+             return undefined;
+           }
+         }
+         return undefined;
+       })(),
+       attributeInfo: (() => {
+         if (!metadata.attributeInfo) return undefined;
+         if (typeof metadata.attributeInfo === 'object') return metadata.attributeInfo;
+         if (typeof metadata.attributeInfo === 'string') {
+           try {
+             return JSON.parse(metadata.attributeInfo);
+           } catch (e) {
+             console.error('Failed to parse attributeInfo:', metadata.attributeInfo);
+             return undefined;
+           }
+         }
+         return undefined;
+       })(),
+       lineage: metadata.lineage || undefined,
+       accuracy: metadata.accuracy || undefined,
+       completeness: metadata.completeness || undefined,
+       consistency: metadata.consistency || undefined,
+       useConstraints: metadata.useConstraints || undefined,
+       accessConstraints: metadata.accessConstraints || undefined,
+       otherConstraints: metadata.otherConstraints || undefined,
+       featureCount: metadata.featureCount || undefined,
+       fileSize: metadata.fileSize ? Number(metadata.fileSize) : undefined,
+       geometryType: metadata.geometryType || undefined,
+       dataFormat: metadata.dataFormat || undefined,
+       processingLevel: metadata.processingLevel || undefined,
+       sniCompliant: metadata.sniCompliant || undefined,
+       sniVersion: metadata.sniVersion || undefined,
+       sniStandard: metadata.sniStandard || undefined,
+       bahasa: metadata.bahasa || undefined,
+       fileIdentifier: metadata.id
+     }
 
     // Generate XML/JSON based on format
     let contentFormat: 'iso19139' | 'sni-json' | 'sni-xml'
@@ -110,10 +189,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       contentFormat = 'iso19139'
     }
 
+    // For draft metadata, allow XML generation even with missing required fields for preview purposes
+    const isDraft = !metadata.isPublished
+
+    if (!isDraft) {
+      // Validate required fields only for published metadata
+      if (!metadataData.title?.trim()) {
+        console.error('Validation error: Title is required for published metadata')
+        return res.status(400).json({ message: 'Title is required for XML generation' })
+      }
+
+      if (!metadataData.contactEmail?.trim()) {
+        console.error('Validation error: Contact email is required for published metadata')
+        return res.status(400).json({ message: 'Contact email is required for XML generation' })
+      }
+    }
+
     console.log(`Generating metadata for format: ${format} -> ${contentFormat}`)
+    console.log(`Metadata data:`, JSON.stringify(metadataData, null, 2))
+
+    try {
+      const xmlContent = generateMetadataXML(metadataData, contentFormat)
+      console.log(`Generated content type: ${contentFormat}, length: ${xmlContent.length}`)
+      console.log(`Content starts with: ${xmlContent.substring(0, 100)}...`)
+    } catch (xmlError) {
+      console.error('XML generation error:', xmlError)
+      return res.status(500).json({ message: 'Failed to generate XML: ' + (xmlError as Error).message })
+    }
+
     const xmlContent = generateMetadataXML(metadataData, contentFormat)
-    console.log(`Generated content type: ${contentFormat}, length: ${xmlContent.length}`)
-    console.log(`Content starts with: ${xmlContent.substring(0, 100)}...`)
 
     // Check if this is a preview request (from detail page)
     if (preview === 'true') {

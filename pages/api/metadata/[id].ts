@@ -60,7 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Check if user can access this metadata
-      if (!metadata.isPublished && (!userId || (metadata.userId !== userId && currentUser?.role !== 'ADMIN'))) {
+      // Allow access if: metadata is published OR user is authenticated
+      if (!metadata.isPublished && !userId) {
         return res.status(403).json({ message: 'Anda tidak memiliki akses ke metadata ini' })
       }
 
@@ -166,6 +167,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         distributionFormat,
         distributor,
         onlineResource,
+        transferOptions,
+        graphicOverview,
+        resourceFormat,
+        resourceSpecificUsage,
+        resourceConstraints,
+        referenceSystemType,
+        attributeDescription,
 
         // Data Quality
         scope,
@@ -304,8 +312,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Distribution Information
         updateData.distributionFormat = distributionFormat?.trim()
+        updateData.dataFormat = req.body.dataFormat?.trim() || resourceFormat?.trim()
         updateData.distributor = distributor?.trim()
         updateData.onlineResource = onlineResource?.trim()
+        updateData.transferOptions = transferOptions
+        updateData.graphicOverview = graphicOverview?.trim()
+        updateData.resourceSpecificUsage = resourceSpecificUsage?.trim()
 
         // Data Quality
         updateData.scope = scope || 'dataset'
@@ -318,6 +330,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateData.useConstraints = useConstraints?.trim()
         updateData.accessConstraints = accessConstraints?.trim()
         updateData.otherConstraints = otherConstraints?.trim()
+        updateData.resourceConstraints = resourceConstraints?.trim()
 
         // Spatial Representation Information
         updateData.spatialRepresentationType = spatialRepresentationType?.trim()
@@ -342,9 +355,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateData.positionalAccuracy = req.body.positionalAccuracy?.trim()
         updateData.conformity = req.body.conformity
         updateData.referenceSystem = req.body.referenceSystem?.trim()
+        updateData.referenceSystemType = referenceSystemType?.trim()
         updateData.projection = req.body.projection?.trim()
         updateData.featureTypes = req.body.featureTypes?.trim()
-        updateData.attributeInfo = req.body.attributeInfo
+        updateData.attributeInfo = (() => {
+          if (req.body.attributeInfo) {
+            try {
+              return JSON.parse(req.body.attributeInfo);
+            } catch {
+              return req.body.attributeInfo;
+            }
+          }
+          if (attributeDescription) {
+            try {
+              return JSON.parse(attributeDescription);
+            } catch {
+              return { description: attributeDescription };
+            }
+          }
+          return null;
+        })()
         updateData.processingLevel = req.body.processingLevel?.trim()
         updateData.processingHistory = req.body.processingHistory?.trim()
         updateData.xmlContent = req.body.xmlContent?.trim()

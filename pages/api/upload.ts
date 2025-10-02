@@ -428,6 +428,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         // Distribution Information
         distributionFormat: formData.distributionFormat || null,
+        dataFormat: geospatialInfo?.dataFormat || formData.dataFormat || formData.resourceFormat || null,
         distributor: formData.distributor || null,
         onlineResource: formData.onlineResource || null,
         transferOptions: formData.transferOptions || null,
@@ -445,14 +446,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         useConstraints: formData.useConstraints || null,
         accessConstraints: formData.accessConstraints || null,
         otherConstraints: formData.otherConstraints || null,
+        resourceConstraints: formData.resourceConstraints || null,
 
         // Reference System
         referenceSystem: formData.referenceSystem || null,
-        projection: formData.referenceSystemType || formData.projection || null,
+        referenceSystemType: formData.referenceSystemType || null,
+        projection: formData.projection || null,
 
         // Content Information
         featureTypes: formData.featureTypes || null,
-        attributeInfo: formData.attributeDescription || formData.attributeInfo || null,
+        attributeInfo: (() => {
+          if (formData.attributeDescription) {
+            // If it's already a valid JSON string, parse it
+            try {
+              return JSON.parse(formData.attributeDescription);
+            } catch {
+              // If it's plain text, wrap it in a JSON object
+              return { description: formData.attributeDescription };
+            }
+          }
+          if (formData.attributeInfo) {
+            try {
+              return JSON.parse(formData.attributeInfo);
+            } catch {
+              return formData.attributeInfo;
+            }
+          }
+          return null;
+        })(),
         contentType: formData.contentType || null,
 
         // Spatial Representation Information (ISO 19115)
@@ -473,11 +494,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         fileSize: primaryFile?.size || null,
         featureCount: geospatialInfo?.featureCount || null,
         geometryType: geospatialInfo?.geometryType || null,
-        dataFormat: geospatialInfo?.dataFormat || null,
 
         // Processing Information
         processingLevel: formData.processingLevel || null,
         processingHistory: formData.processingHistory || null,
+        graphicOverview: formData.graphicOverview || null,
+        resourceSpecificUsage: formData.resourceSpecificUsage || null,
 
         // XML Metadata
         xmlContent: formData.xmlContent || null,

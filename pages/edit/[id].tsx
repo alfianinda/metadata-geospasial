@@ -594,7 +594,7 @@ export default function EditMetadata() {
           hierarchyLevelName: data.hierarchyLevelName || '',
           contactName: data.contactName || '',
           contactEmail: data.contactEmail || '',
-          dateStamp: data.dateStamp || '',
+          dateStamp: data.dateStamp ? new Date(data.dateStamp).toISOString().split('T')[0] : '',
           metadataStandardName: data.metadataStandardName || 'ISO 19115',
           metadataStandardVersion: data.metadataStandardVersion || '2003/Cor.1:2006',
           dataSetURI: data.dataSetURI || '',
@@ -612,13 +612,13 @@ export default function EditMetadata() {
           spatialResolution: data.spatialResolution || '',
           temporalResolution: data.temporalResolution || '',
           topicCategory: data.topicCategory || '',
-          extent: data.geographicExtent || '', // API returns geographicExtent
-          additionalDocumentation: data.supplementalInfo || '', // API returns supplementalInfo
+          extent: data.geographicExtent || data.extent || '', // API returns geographicExtent or extent
+          additionalDocumentation: data.supplementalInfo || data.additionalDocumentation || '', // API returns supplementalInfo or additionalDocumentation
           processingLevel: data.processingLevel || '',
-          resourceMaintenance: data.updateFrequency || '', // API returns updateFrequency
+          resourceMaintenance: data.updateFrequency || data.resourceMaintenance || '', // API returns updateFrequency or resourceMaintenance
           graphicOverview: data.graphicOverview || '',
-          resourceFormat: data.resourceFormat || '',
-          descriptiveKeywords: data.keywords || data.themeKeywords || '', // API returns keywords or themeKeywords
+          resourceFormat: data.dataFormat || data.resourceFormat || '',
+          descriptiveKeywords: data.keywords || data.themeKeywords || data.descriptiveKeywords || '', // API returns keywords, themeKeywords, or descriptiveKeywords
           resourceSpecificUsage: data.resourceSpecificUsage || '',
           resourceConstraints: data.resourceConstraints || '',
 
@@ -633,11 +633,25 @@ export default function EditMetadata() {
           georeferenceable: data.georeferenceable || false,
 
           // referenceSystemInfo fields
-          referenceSystemIdentifier: data.coordinateSystem || 'EPSG:4326', // API returns coordinateSystem
+          referenceSystemIdentifier: data.coordinateSystem || data.referenceSystemIdentifier || 'EPSG:4326', // API returns coordinateSystem or referenceSystemIdentifier
           referenceSystemType: data.referenceSystemType || 'geodetic',
 
           // contentInfo fields
-          attributeDescription: data.attributeDescription || '',
+          attributeDescription: (() => {
+            if (data.attributeInfo) {
+              if (typeof data.attributeInfo === 'string') {
+                try {
+                  const parsed = JSON.parse(data.attributeInfo);
+                  return typeof parsed === 'object' && parsed.description ? parsed.description : JSON.stringify(parsed);
+                } catch {
+                  return data.attributeInfo;
+                }
+              } else if (typeof data.attributeInfo === 'object') {
+                return data.attributeInfo.description || JSON.stringify(data.attributeInfo);
+              }
+            }
+            return data.attributeDescription || '';
+          })(),
           contentType: data.contentType || '',
 
           // distributionInfo fields
@@ -940,7 +954,7 @@ export default function EditMetadata() {
       if (response.ok) {
         setMetadata(data)
         setXmlContent(data.xmlContent || '')
-        router.push('/dashboard')
+        router.push(`/metadata/${id}`)
       } else if (response.status === 401) {
         setError('Sesi login Anda telah berakhir. Silakan login kembali.')
         localStorage.removeItem('token')
@@ -1115,9 +1129,10 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         >
-                          <option value="completed">Completed (Selesai)</option>
-                          <option value="ongoing">Ongoing (Sedang Berlangsung)</option>
-                          <option value="planned">Planned (Direncanakan)</option>
+                          <option value="completed">Completed</option>
+                          <option value="ongoing">Ongoing</option>
+                          <option value="planned">Planned</option>
+                          <option value="deprecated">Deprecated</option>
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Status dataset</p>
                       </div>
@@ -1187,7 +1202,7 @@ export default function EditMetadata() {
                           value={formData.spatialResolution}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="1:25.000, 10 meter"
+                          placeholder="1:25.000 (skala), 10 meter (resolusi)"
                         />
                         <p className="text-xs text-gray-500 mt-1">Resolusi spasial dataset</p>
                       </div>
@@ -1201,7 +1216,7 @@ export default function EditMetadata() {
                           value={formData.pointOfContact}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kontak utama dataset"
+                          placeholder="Nama: Jane Smith, Email: jane@bps.go.id, Organisasi: BPS"
                         />
                         <p className="text-xs text-gray-500 mt-1">Titik kontak untuk dataset</p>
                       </div>
@@ -1215,7 +1230,7 @@ export default function EditMetadata() {
                           value={formData.descriptiveKeywords}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="kata kunci deskriptif"
+                          placeholder="administrasi, peta, indonesia, batas wilayah"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kata kunci deskriptif</p>
                       </div>
@@ -1229,7 +1244,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Cakupan geografis dan temporal"
+                          placeholder="Bounding Box: 95.0°E, 141.0°E, -11.0°N, 6.0°N"
                         />
                         <p className="text-xs text-gray-500 mt-1">Cakupan geografis dan temporal</p>
                       </div>
@@ -1243,7 +1258,7 @@ export default function EditMetadata() {
                           value={formData.additionalDocumentation}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Dokumentasi tambahan"
+                          placeholder="Link ke dokumentasi teknis atau metodologi"
                         />
                         <p className="text-xs text-gray-500 mt-1">Dokumentasi tambahan</p>
                       </div>
@@ -1274,7 +1289,7 @@ export default function EditMetadata() {
                           value={formData.resourceMaintenance}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Frekuensi update"
+                          placeholder="Frekuensi update: tahunan"
                         />
                         <p className="text-xs text-gray-500 mt-1">Informasi maintenance resource</p>
                       </div>
@@ -1288,7 +1303,7 @@ export default function EditMetadata() {
                           value={formData.graphicOverview}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="URL gambar overview"
+                          placeholder="Thumbnail atau preview gambar dataset"
                         />
                         <p className="text-xs text-gray-500 mt-1">Gambar overview dataset</p>
                       </div>
@@ -1302,7 +1317,7 @@ export default function EditMetadata() {
                           value={formData.resourceFormat}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Format resource"
+                          placeholder="GeoJSON, Shapefile, GeoTIFF"
                         />
                         <p className="text-xs text-gray-500 mt-1">Format resource dataset</p>
                       </div>
@@ -1316,7 +1331,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Penggunaan spesifik"
+                          placeholder="Digunakan oleh pemerintah daerah untuk perencanaan"
                         />
                         <p className="text-xs text-gray-500 mt-1">Penggunaan spesifik resource</p>
                       </div>
@@ -1330,7 +1345,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kendala penggunaan resource"
+                          placeholder="Lisensi Creative Commons, pembatasan akses"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kendala penggunaan resource</p>
                       </div>
@@ -1410,7 +1425,19 @@ export default function EditMetadata() {
                         >
                           <option value="dataset">Dataset</option>
                           <option value="series">Series</option>
+                          <option value="service">Service</option>
+                          <option value="application">Application</option>
+                          <option value="collectionHardware">Collection Hardware</option>
+                          <option value="collectionSession">Collection Session</option>
+                          <option value="nonGeographicDataset">Non Geographic Dataset</option>
+                          <option value="dimensionGroup">Dimension Group</option>
                           <option value="feature">Feature</option>
+                          <option value="featureType">Feature Type</option>
+                          <option value="propertyType">Property Type</option>
+                          <option value="fieldSession">Field Session</option>
+                          <option value="software">Software</option>
+                          <option value="model">Model</option>
+                          <option value="tile">Tile</option>
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Tingkat hierarki dataset</p>
                       </div>
@@ -1560,7 +1587,7 @@ export default function EditMetadata() {
                           value={formData.axisDimensionProperties}
                           onChange={handleChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="X: 2D, Y: 2D"
+                          placeholder="X: 2D, Y: 2D, Z: opsional"
                         />
                         <p className="text-xs text-gray-500 mt-1">Properti dimensi sumbu</p>
                       </div>
@@ -1639,6 +1666,9 @@ export default function EditMetadata() {
                           <option value="geodetic">Geodetic</option>
                           <option value="vertical">Vertical</option>
                           <option value="temporal">Temporal</option>
+                          <option value="WGS84 Geographic">WGS84 Geographic</option>
+                          <option value="UTM">UTM</option>
+                          <option value="Lambert Conformal Conic">Lambert Conformal Conic</option>
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Tipe sistem referensi</p>
                       </div>
@@ -1657,7 +1687,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Deskripsi atribut"
+                          placeholder="Nama atribut dan deskripsinya"
                         />
                         <p className="text-xs text-gray-500 mt-1">Deskripsi atribut</p>
                       </div>
@@ -1735,7 +1765,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Opsi transfer data"
+                          placeholder="URL download, protokol akses"
                         />
                         <p className="text-xs text-gray-500 mt-1">Opsi transfer data</p>
                       </div>
@@ -1758,6 +1788,24 @@ export default function EditMetadata() {
                           <option value="dataset">Dataset</option>
                           <option value="series">Series</option>
                           <option value="feature">Feature</option>
+                          <option value="featureType">Feature Type</option>
+                          <option value="attribute">Attribute</option>
+                          <option value="attributeType">Attribute Type</option>
+                          <option value="collectionHardware">Collection Hardware</option>
+                          <option value="collectionSession">Collection Session</option>
+                          <option value="tile">Tile</option>
+                          <option value="model">Model</option>
+                          <option value="fieldSession">Field Session</option>
+                          <option value="software">Software</option>
+                          <option value="service">Service</option>
+                          <option value="metadata">Metadata</option>
+                          <option value="initiative">Initiative</option>
+                          <option value="stereomate">Stereomate</option>
+                          <option value="sensor">Sensor</option>
+                          <option value="platformSeries">Platform Series</option>
+                          <option value="sensorSeries">Sensor Series</option>
+                          <option value="productionSeries">Production Series</option>
+                          <option value="transferAggregate">Transfer Aggregate</option>
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Cakupan kualitas data</p>
                       </div>
@@ -1771,7 +1819,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Riwayat data"
+                          placeholder="Sumber data, metode pengumpulan, proses pengolahan"
                         />
                         <p className="text-xs text-gray-500 mt-1">Riwayat data (lineage)</p>
                       </div>
@@ -1785,7 +1833,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Akurasi data"
+                          placeholder="Positional accuracy, attribute accuracy"
                         />
                         <p className="text-xs text-gray-500 mt-1">Akurasi data</p>
                       </div>
@@ -1799,7 +1847,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kelengkapan data"
+                          placeholder="Persentase data yang lengkap"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kelengkapan data</p>
                       </div>
@@ -1813,7 +1861,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Konsistensi data"
+                          placeholder="Tingkat konsistensi antar atribut"
                         />
                         <p className="text-xs text-gray-500 mt-1">Konsistensi data</p>
                       </div>
@@ -1832,7 +1880,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kendala penggunaan"
+                          placeholder="Lisensi, hak cipta, pembatasan akses"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kendala penggunaan</p>
                       </div>
@@ -1846,7 +1894,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kendala akses"
+                          placeholder="restricted, confidential, protected"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kendala akses</p>
                       </div>
@@ -1860,7 +1908,7 @@ export default function EditMetadata() {
                           onChange={handleChange}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Kendala lainnya"
+                          placeholder="Persyaratan khusus penggunaan"
                         />
                         <p className="text-xs text-gray-500 mt-1">Kendala lainnya</p>
                       </div>

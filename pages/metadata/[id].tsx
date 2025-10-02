@@ -14,10 +14,27 @@ const metadataEntities = [
     required: true,
     children: [
       {
+        id: 'fileIdentifier',
+        name: 'fileIdentifier',
+        description: 'Identifier unik untuk metadata',
+        required: false,
+        example: 'uuid:12345678-1234-1234-1234-123456789abc',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'language',
+        name: 'language',
+        description: 'Bahasa yang digunakan dalam metadata',
+        required: true,
+        example: 'ind (Bahasa Indonesia)',
+        standard: 'ISO 19115 Mandatory'
+      },
+      {
         id: 'characterSet',
         name: 'characterSet',
         description: 'Character set yang digunakan',
         required: false,
+        example: 'utf8',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -25,6 +42,7 @@ const metadataEntities = [
         name: 'parentIdentifier',
         description: 'Identifier dari metadata parent',
         required: false,
+        example: 'uuid:parent-1234-5678-9abc',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -32,6 +50,7 @@ const metadataEntities = [
         name: 'hierarchyLevel',
         description: 'Tingkat hierarki dataset',
         required: true,
+        example: 'dataset',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -39,6 +58,7 @@ const metadataEntities = [
         name: 'hierarchyLevelName',
         description: 'Nama tingkat hierarki',
         required: false,
+        example: 'Dataset Geospasial',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -46,6 +66,7 @@ const metadataEntities = [
         name: 'contact',
         description: 'Informasi kontak untuk metadata',
         required: true,
+        example: 'Nama: John Doe, Email: john@example.com',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -53,6 +74,39 @@ const metadataEntities = [
         name: 'dateStamp',
         description: 'Tanggal pembuatan metadata',
         required: false,
+        example: '2024-01-15',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'metadataStandardName',
+        name: 'metadataStandardName',
+        description: 'Nama standar metadata',
+        required: false,
+        example: 'ISO 19115',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'metadataStandardVersion',
+        name: 'metadataStandardVersion',
+        description: 'Versi standar metadata',
+        required: false,
+        example: '2003/Cor.1:2006',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'dataSetURI',
+        name: 'dataSetURI',
+        description: 'URI untuk mengakses dataset',
+        required: false,
+        example: 'https://data.example.com/dataset/123',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'locale',
+        name: 'locale',
+        description: 'Informasi locale untuk metadata',
+        required: false,
+        example: 'Bahasa Indonesia (id)',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -68,6 +122,7 @@ const metadataEntities = [
         name: 'title',
         description: 'Judul dataset',
         required: true,
+        example: 'Peta Administrasi Indonesia 2024',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -75,6 +130,7 @@ const metadataEntities = [
         name: 'status',
         description: 'Status dataset',
         required: true,
+        example: 'completed (selesai), ongoing (sedang berlangsung), planned (direncanakan)',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -82,6 +138,7 @@ const metadataEntities = [
         name: 'abstract',
         description: 'Ringkasan isi dataset',
         required: true,
+        example: 'Dataset ini berisi peta administrasi Indonesia yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan.',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -89,6 +146,7 @@ const metadataEntities = [
         name: 'purpose',
         description: 'Tujuan penggunaan dataset',
         required: false,
+        example: 'Dataset ini digunakan untuk perencanaan pembangunan, analisis spasial, dan keperluan administrasi pemerintahan.',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -96,6 +154,7 @@ const metadataEntities = [
         name: 'topicCategory',
         description: 'Kategori topik ISO 19115',
         required: false,
+        example: 'boundaries, biota, climatology, economy, elevation, environment, geoscientific, health, imagery, intelligence, inlandWaters, location, oceans, planning, society, structure, transportation, utilities',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -103,6 +162,7 @@ const metadataEntities = [
         name: 'spatialResolution',
         description: 'Resolusi spasial dataset',
         required: false,
+        example: '1:25.000 (skala), 10 meter (resolusi)',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -110,6 +170,7 @@ const metadataEntities = [
         name: 'pointOfContact',
         description: 'Titik kontak untuk dataset',
         required: false,
+        example: 'Nama: Jane Smith, Email: jane@bps.go.id, Organisasi: BPS',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -117,6 +178,7 @@ const metadataEntities = [
         name: 'descriptiveKeywords',
         description: 'Kata kunci deskriptif',
         required: false,
+        example: 'administrasi, peta, indonesia, batas wilayah',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -124,6 +186,7 @@ const metadataEntities = [
         name: 'extent',
         description: 'Cakupan geografis dan temporal',
         required: true,
+        example: 'Bounding Box: 95.0°E, 141.0°E, -11.0°N, 6.0°N',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -131,6 +194,7 @@ const metadataEntities = [
         name: 'additionalDocumentation',
         description: 'Dokumentasi tambahan',
         required: false,
+        example: 'Link ke dokumentasi teknis atau metodologi',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -138,6 +202,7 @@ const metadataEntities = [
         name: 'processingLevel',
         description: 'Tingkat pemrosesan data',
         required: false,
+        example: 'raw (mentah), processed (diproses), interpreted (diinterpretasi)',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -145,6 +210,7 @@ const metadataEntities = [
         name: 'resourceMaintenance',
         description: 'Informasi maintenance resource',
         required: false,
+        example: 'Frekuensi update: tahunan',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -152,6 +218,7 @@ const metadataEntities = [
         name: 'graphicOverview',
         description: 'Gambar overview dataset',
         required: false,
+        example: 'Thumbnail atau preview gambar dataset',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -159,6 +226,7 @@ const metadataEntities = [
         name: 'resourceFormat',
         description: 'Format resource dataset',
         required: false,
+        example: 'GeoJSON, Shapefile, GeoTIFF',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -166,6 +234,7 @@ const metadataEntities = [
         name: 'resourceSpecificUsage',
         description: 'Penggunaan spesifik resource',
         required: false,
+        example: 'Digunakan oleh pemerintah daerah untuk perencanaan',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -173,6 +242,7 @@ const metadataEntities = [
         name: 'resourceConstraints',
         description: 'Kendala penggunaan resource',
         required: false,
+        example: 'Lisensi Creative Commons, pembatasan akses',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -188,6 +258,7 @@ const metadataEntities = [
         name: 'spatialRepresentationType',
         description: 'Tipe representasi spasial',
         required: true,
+        example: 'vector, grid, textTable',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -195,6 +266,7 @@ const metadataEntities = [
         name: 'axisDimensionProperties',
         description: 'Properti dimensi sumbu',
         required: false,
+        example: 'X: 2D, Y: 2D, Z: opsional',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -202,6 +274,7 @@ const metadataEntities = [
         name: 'cellGeometry',
         description: 'Geometri sel untuk grid',
         required: false,
+        example: 'point, area',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -209,6 +282,7 @@ const metadataEntities = [
         name: 'georectified',
         description: 'Status georectified',
         required: false,
+        example: 'true/false',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -216,6 +290,7 @@ const metadataEntities = [
         name: 'georeferenceable',
         description: 'Status georeferenceable',
         required: false,
+        example: 'true/false',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -231,6 +306,7 @@ const metadataEntities = [
         name: 'referenceSystemIdentifier',
         description: 'Identifier sistem referensi',
         required: true,
+        example: 'EPSG:4326 (WGS84)',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -238,6 +314,7 @@ const metadataEntities = [
         name: 'referenceSystemType',
         description: 'Tipe sistem referensi',
         required: false,
+        example: 'geodetic, vertical, temporal',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -253,6 +330,15 @@ const metadataEntities = [
         name: 'attributeDescription',
         description: 'Deskripsi atribut',
         required: false,
+        example: 'Nama atribut dan deskripsinya',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'contentType',
+        name: 'contentType',
+        description: 'Tipe konten',
+        required: false,
+        example: 'image, thematicClassification, physicalMeasurement',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -268,6 +354,15 @@ const metadataEntities = [
         name: 'distributionFormat',
         description: 'Format distribusi',
         required: false,
+        example: 'GeoJSON, Shapefile, GeoTIFF',
+        standard: 'ISO 19115 Optional'
+      },
+      {
+        id: 'distributor',
+        name: 'distributor',
+        description: 'Informasi distributor',
+        required: false,
+        example: 'Nama distributor dan kontak',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -275,6 +370,7 @@ const metadataEntities = [
         name: 'transferOptions',
         description: 'Opsi transfer data',
         required: false,
+        example: 'URL download, protokol akses',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -290,6 +386,7 @@ const metadataEntities = [
         name: 'scope',
         description: 'Cakupan kualitas data',
         required: true,
+        example: 'dataset, series, feature',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -297,6 +394,7 @@ const metadataEntities = [
         name: 'lineage',
         description: 'Riwayat data (lineage)',
         required: false,
+        example: 'Sumber data, metode pengumpulan, proses pengolahan',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -304,6 +402,7 @@ const metadataEntities = [
         name: 'accuracy',
         description: 'Akurasi data',
         required: false,
+        example: 'Positional accuracy, attribute accuracy',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -311,6 +410,7 @@ const metadataEntities = [
         name: 'completeness',
         description: 'Kelengkapan data',
         required: false,
+        example: 'Persentase data yang lengkap',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -318,6 +418,7 @@ const metadataEntities = [
         name: 'consistency',
         description: 'Konsistensi data',
         required: false,
+        example: 'Tingkat konsistensi antar atribut',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -333,6 +434,7 @@ const metadataEntities = [
         name: 'useConstraints',
         description: 'Kendala penggunaan',
         required: false,
+        example: 'Lisensi, hak cipta, pembatasan akses',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -340,6 +442,7 @@ const metadataEntities = [
         name: 'accessConstraints',
         description: 'Kendala akses',
         required: false,
+        example: 'restricted, confidential, protected',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -347,7 +450,96 @@ const metadataEntities = [
         name: 'otherConstraints',
         description: 'Kendala lainnya',
         required: false,
+        example: 'Persyaratan khusus penggunaan',
         standard: 'ISO 19115 Optional'
+      }
+    ]
+  },
+  {
+    id: 'sniSpecific',
+    name: 'SNI Specific',
+    description: 'Field khusus untuk standar SNI',
+    required: false,
+    children: [
+      {
+        id: 'sniCompliant',
+        name: 'sniCompliant',
+        description: 'Status kepatuhan terhadap SNI',
+        required: false,
+        example: 'true/false',
+        standard: 'SNI Specific'
+      },
+      {
+        id: 'sniVersion',
+        name: 'sniVersion',
+        description: 'Versi standar SNI',
+        required: false,
+        example: '1.0',
+        standard: 'SNI Specific'
+      },
+      {
+        id: 'sniStandard',
+        name: 'sniStandard',
+        description: 'Standar SNI yang digunakan',
+        required: false,
+        example: 'SNI ISO 19115:2019',
+        standard: 'SNI Specific'
+      },
+      {
+        id: 'bahasa',
+        name: 'bahasa',
+        description: 'Bahasa yang digunakan',
+        required: false,
+        example: 'id (Indonesia), en (English)',
+        standard: 'SNI Specific'
+      }
+    ]
+  },
+  {
+    id: 'fileInfo',
+    name: 'File Information',
+    description: 'Informasi file yang diupload',
+    required: false,
+    children: [
+      {
+        id: 'originalFileName',
+        name: 'originalFileName',
+        description: 'Nama file asli',
+        required: false,
+        example: 'data.shp',
+        standard: 'File Info'
+      },
+      {
+        id: 'fileSize',
+        name: 'fileSize',
+        description: 'Ukuran file',
+        required: false,
+        example: '10 MB',
+        standard: 'File Info'
+      },
+      {
+        id: 'featureCount',
+        name: 'featureCount',
+        description: 'Jumlah fitur',
+        required: false,
+        example: '1000',
+        standard: 'File Info'
+      },
+      {
+        id: 'geometryType',
+        name: 'geometryType',
+        description: 'Tipe geometri',
+        required: false,
+        example: 'Point, LineString, Polygon',
+        standard: 'File Info'
+      },
+      {
+        id: 'dataFormat',
+        name: 'dataFormat',
+        description: 'Format data',
+        required: false,
+        example: 'GeoJSON, Shapefile, GeoTIFF',
+        standard: 'File Info'
       }
     ]
   }
@@ -454,6 +646,16 @@ interface Metadata {
   georectified?: boolean
   georeferenceable?: boolean
   contentType?: string
+  // Additional fields for detail page
+  pointOfContact?: string
+  graphicOverview?: string
+  resourceFormat?: string
+  referenceSystemType?: string
+  resourceSpecificUsage?: string
+  resourceConstraints?: string
+  resourceMaintenance?: string
+  additionalDocumentation?: string
+  descriptiveKeywords?: string
   createdAt: string
   updatedAt: string
   files: FileInfo[]
@@ -1024,7 +1226,7 @@ export default function MetadataDetail() {
                     Point of Contact
                   </label>
                   <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">
-                    {metadata.contactName ? `${metadata.contactName}${metadata.contactEmail ? ` (${metadata.contactEmail})` : ''}` : 'Not specified'}
+                    {metadata.pointOfContact || (metadata.contactName ? `${metadata.contactName}${metadata.contactEmail ? ` (${metadata.contactEmail})` : ''}` : 'Not specified')}
                   </div>
                 </div>
                 <div>
@@ -1035,7 +1237,7 @@ export default function MetadataDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Geographic Extent
+                    Extent
                   </label>
                   <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.geographicExtent || 'Not specified'}</div>
                 </div>
@@ -1059,27 +1261,27 @@ export default function MetadataDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Graphic Overview
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.xmlContent ? 'Available' : 'Not specified'}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Resource Format
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.dataFormat || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.dataFormat || metadata.resourceFormat || 'Not specified'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Resource Specific Usage
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.purpose || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.resourceSpecificUsage || metadata.purpose || 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Graphic Overview
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.graphicOverview || 'Not specified'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Resource Constraints
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.useConstraints || metadata.accessConstraints || metadata.otherConstraints || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.resourceConstraints || 'Not specified'}</div>
                 </div>
               </div>
             )}
@@ -1116,12 +1318,6 @@ export default function MetadataDetail() {
                   </label>
                   <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.georeferenceable !== undefined ? (metadata.georeferenceable ? 'Yes' : 'No') : 'Not specified'}</div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Vertical Extent
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.verticalExtent ? JSON.stringify(metadata.verticalExtent, null, 2) : 'Not specified'}</div>
-                </div>
               </div>
             )}
 
@@ -1135,15 +1331,9 @@ export default function MetadataDetail() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reference System
+                    Reference System Type
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.referenceSystem || 'Not specified'}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Projection
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.projection || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.referenceSystemType || metadata.referenceSystem || 'Not specified'}</div>
                 </div>
               </div>
             )}
@@ -1154,19 +1344,29 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Attribute Description
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.attributeInfo ? JSON.stringify(metadata.attributeInfo, null, 2) : 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{(() => {
+                    if (metadata.attributeInfo) {
+                      if (typeof metadata.attributeInfo === 'string') {
+                        try {
+                          const parsed = JSON.parse(metadata.attributeInfo);
+                          return parsed.description || metadata.attributeInfo;
+                        } catch {
+                          return metadata.attributeInfo;
+                        }
+                      } else if (typeof metadata.attributeInfo === 'object' && metadata.attributeInfo.description) {
+                        return metadata.attributeInfo.description;
+                      } else if (typeof metadata.attributeInfo === 'object') {
+                        return JSON.stringify(metadata.attributeInfo);
+                      }
+                    }
+                    return 'Not specified';
+                  })()}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Content Type
                   </label>
                   <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.contentType || 'Not specified'}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Feature Types
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.featureTypes || 'Not specified'}</div>
                 </div>
               </div>
             )}
@@ -1232,18 +1432,6 @@ export default function MetadataDetail() {
                   </label>
                   <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.consistency || 'Not specified'}</div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Positional Accuracy
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.positionalAccuracy || 'Not specified'}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Conformity
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.conformity ? JSON.stringify(metadata.conformity, null, 2) : 'Not specified'}</div>
-                </div>
               </div>
             )}
 
@@ -1270,49 +1458,70 @@ export default function MetadataDetail() {
               </div>
             )}
 
-            {/* SNI Specific - always visible */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SNI Version
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.sniVersion || 'Not specified'}</div>
+            {activeSection === 'sniSpecific' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SNI Compliant
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.sniCompliant !== undefined ? (metadata.sniCompliant ? 'Yes' : 'No') : 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SNI Version
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.sniVersion || 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SNI Standard
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.sniStandard || 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bahasa
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.bahasa === 'id' ? 'Indonesia' : metadata.bahasa === 'en' ? 'English' : 'Not specified'}</div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SNI Standard
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.sniStandard || 'Not specified'}</div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bahasa
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.bahasa === 'id' ? 'Indonesia' : metadata.bahasa === 'en' ? 'English' : 'Not specified'}</div>
-              </div>
-            </div>
+            )}
 
-            {/* File Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Original File Name
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.originalFileName || 'Not specified'}</div>
+            {activeSection === 'fileInfo' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Original File Name
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.originalFileName || 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    File Size
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.fileSize ? `${(metadata.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Feature Count
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.featureCount ? metadata.featureCount.toLocaleString() : 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Geometry Type
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.geometryType || 'Not specified'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data Format
+                  </label>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.dataFormat || 'Not specified'}</div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  File Size
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.fileSize ? `${(metadata.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not specified'}</div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Feature Count
-                </label>
-                <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.featureCount ? metadata.featureCount.toLocaleString() : 'Not specified'}</div>
-              </div>
-            </div>
+            )}
+
 
             {/* Associated Files */}
             <div className="border-t border-gray-200 pt-4">

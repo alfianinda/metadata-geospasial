@@ -1213,7 +1213,7 @@ export default function Upload() {
                         value={metadata.fileIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, fileIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="UUID atau identifier unik"
+                        placeholder="uuid:12345678-1234-1234-1234-123456789abc"
                       />
                       <p className="text-xs text-gray-500 mt-1">Identifier unik untuk metadata</p>
                     </div>
@@ -1244,7 +1244,8 @@ export default function Upload() {
                       >
                         <option value="">Pilih character set</option>
                         <option value="utf8">UTF-8</option>
-                        <option value="iso-8859-1">ISO-8859-1</option>
+                        <option value="ascii">ASCII</option>
+                        <option value="iso88591">ISO-8859-1</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Character set yang digunakan</p>
                     </div>
@@ -1258,7 +1259,7 @@ export default function Upload() {
                         value={metadata.parentIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, parentIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Identifier metadata parent"
+                        placeholder="uuid:parent-1234-5678-9abc"
                       />
                       <p className="text-xs text-gray-500 mt-1">Identifier dari metadata parent</p>
                     </div>
@@ -1275,6 +1276,18 @@ export default function Upload() {
                         <option value="dataset">Dataset</option>
                         <option value="series">Series</option>
                         <option value="service">Service</option>
+                        <option value="application">Application</option>
+                        <option value="collectionHardware">Collection Hardware</option>
+                        <option value="collectionSession">Collection Session</option>
+                        <option value="nonGeographicDataset">Non Geographic Dataset</option>
+                        <option value="dimensionGroup">Dimension Group</option>
+                        <option value="feature">Feature</option>
+                        <option value="featureType">Feature Type</option>
+                        <option value="propertyType">Property Type</option>
+                        <option value="fieldSession">Field Session</option>
+                        <option value="software">Software</option>
+                        <option value="model">Model</option>
+                        <option value="tile">Tile</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Tingkat hierarki dataset</p>
                     </div>
@@ -1288,7 +1301,7 @@ export default function Upload() {
                         value={metadata.hierarchyLevelName}
                         onChange={(e) => setMetadata(prev => ({ ...prev, hierarchyLevelName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Nama tingkat hierarki"
+                        placeholder="Dataset Geospasial"
                       />
                       <p className="text-xs text-gray-500 mt-1">Nama tingkat hierarki</p>
                     </div>
@@ -1302,7 +1315,7 @@ export default function Upload() {
                         value={metadata.contactName || ''}
                         onChange={(e) => setMetadata(prev => ({ ...prev, contactName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Nama kontak"
+                        placeholder="John Doe"
                       />
                       <p className="text-xs text-gray-500 mt-1">Nama kontak untuk metadata</p>
                     </div>
@@ -1316,7 +1329,7 @@ export default function Upload() {
                         value={metadata.contactEmail || ''}
                         onChange={(e) => setMetadata(prev => ({ ...prev, contactEmail: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Email kontak"
+                        placeholder="john@example.com"
                       />
                       <p className="text-xs text-gray-500 mt-1">Email kontak untuk metadata</p>
                     </div>
@@ -1404,7 +1417,7 @@ export default function Upload() {
                         value={metadata.title}
                         onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Judul dataset"
+                        placeholder="Peta Administrasi Indonesia 2024"
                       />
                       <p className="text-xs text-gray-500 mt-1">Judul dataset</p>
                     </div>
@@ -1435,7 +1448,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, abstract: e.target.value }))}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Deskripsi dataset"
+                        placeholder="Dataset ini berisi peta administrasi Indonesia yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan."
                       />
                       <p className="text-xs text-gray-500 mt-1">Ringkasan isi dataset</p>
                     </div>
@@ -1449,7 +1462,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, purpose: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Tujuan penggunaan dataset"
+                        placeholder="Dataset ini digunakan untuk perencanaan pembangunan, analisis spasial, dan keperluan administrasi pemerintahan."
                       />
                       <p className="text-xs text-gray-500 mt-1">Tujuan penggunaan dataset</p>
                     </div>
@@ -1491,7 +1504,7 @@ export default function Upload() {
                         value={metadata.spatialResolution}
                         onChange={(e) => setMetadata(prev => ({ ...prev, spatialResolution: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="1:10000, 10 meter"
+                        placeholder="1:25.000 (skala), 10 meter (resolusi)"
                       />
                       <p className="text-xs text-gray-500 mt-1">Resolusi spasial dataset</p>
                     </div>
@@ -1505,7 +1518,7 @@ export default function Upload() {
                         value={metadata.pointOfContact}
                         onChange={(e) => setMetadata(prev => ({ ...prev, pointOfContact: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kontak utama dataset"
+                        placeholder="Nama: Jane Smith, Email: jane@bps.go.id, Organisasi: BPS"
                       />
                       <p className="text-xs text-gray-500 mt-1">Titik kontak untuk dataset</p>
                     </div>
@@ -1519,7 +1532,7 @@ export default function Upload() {
                         value={metadata.descriptiveKeywords}
                         onChange={(e) => setMetadata(prev => ({ ...prev, descriptiveKeywords: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="kata kunci deskriptif"
+                        placeholder="administrasi, peta, indonesia, batas wilayah"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kata kunci deskriptif</p>
                     </div>
@@ -1533,7 +1546,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, extent: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Cakupan geografis dan temporal"
+                        placeholder="Bounding Box: 95.0°E, 141.0°E, -11.0°N, 6.0°N"
                       />
                       <p className="text-xs text-gray-500 mt-1">Cakupan geografis dan temporal</p>
                     </div>
@@ -1547,7 +1560,7 @@ export default function Upload() {
                         value={metadata.additionalDocumentation}
                         onChange={(e) => setMetadata(prev => ({ ...prev, additionalDocumentation: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Dokumentasi tambahan"
+                        placeholder="Link ke dokumentasi teknis atau metodologi"
                       />
                       <p className="text-xs text-gray-500 mt-1">Dokumentasi tambahan</p>
                     </div>
@@ -1578,7 +1591,7 @@ export default function Upload() {
                         value={metadata.resourceMaintenance}
                         onChange={(e) => setMetadata(prev => ({ ...prev, resourceMaintenance: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Frekuensi update"
+                        placeholder="Frekuensi update: tahunan"
                       />
                       <p className="text-xs text-gray-500 mt-1">Informasi maintenance resource</p>
                     </div>
@@ -1592,7 +1605,7 @@ export default function Upload() {
                         value={metadata.graphicOverview}
                         onChange={(e) => setMetadata(prev => ({ ...prev, graphicOverview: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="URL gambar overview"
+                        placeholder="Thumbnail atau preview gambar dataset"
                       />
                       <p className="text-xs text-gray-500 mt-1">Gambar overview dataset</p>
                     </div>
@@ -1606,7 +1619,7 @@ export default function Upload() {
                         value={metadata.resourceFormat}
                         onChange={(e) => setMetadata(prev => ({ ...prev, resourceFormat: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Format resource"
+                        placeholder="GeoJSON, Shapefile, GeoTIFF"
                       />
                       <p className="text-xs text-gray-500 mt-1">Format resource dataset</p>
                     </div>
@@ -1620,7 +1633,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, resourceSpecificUsage: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Penggunaan spesifik"
+                        placeholder="Digunakan oleh pemerintah daerah untuk perencanaan"
                       />
                       <p className="text-xs text-gray-500 mt-1">Penggunaan spesifik resource</p>
                     </div>
@@ -1634,7 +1647,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, resourceConstraints: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kendala penggunaan resource"
+                        placeholder="Lisensi Creative Commons, pembatasan akses"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kendala penggunaan resource</p>
                     </div>
@@ -1673,7 +1686,7 @@ export default function Upload() {
                         value={metadata.axisDimensionProperties}
                         onChange={(e) => setMetadata(prev => ({ ...prev, axisDimensionProperties: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="X: 2D, Y: 2D"
+                        placeholder="X: 2D, Y: 2D, Z: opsional"
                       />
                       <p className="text-xs text-gray-500 mt-1">Properti dimensi sumbu</p>
                     </div>
@@ -1736,7 +1749,7 @@ export default function Upload() {
                         value={metadata.referenceSystemIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, referenceSystemIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="EPSG:4326"
+                        placeholder="EPSG:4326 (WGS84)"
                       />
                       <p className="text-xs text-gray-500 mt-1">Identifier sistem referensi</p>
                     </div>
@@ -1775,7 +1788,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, attributeDescription: e.target.value }))}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Deskripsi atribut data"
+                        placeholder="Nama atribut dan deskripsinya"
                       />
                       <p className="text-xs text-gray-500 mt-1">Deskripsi atribut</p>
                     </div>
@@ -1811,7 +1824,7 @@ export default function Upload() {
                         value={metadata.distributionFormat}
                         onChange={(e) => setMetadata(prev => ({ ...prev, distributionFormat: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="GeoJSON, Shapefile"
+                        placeholder="GeoJSON, Shapefile, GeoTIFF"
                       />
                       <p className="text-xs text-gray-500 mt-1">Format distribusi</p>
                     </div>
@@ -1825,7 +1838,7 @@ export default function Upload() {
                         value={metadata.distributor}
                         onChange={(e) => setMetadata(prev => ({ ...prev, distributor: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Informasi distributor"
+                        placeholder="Nama distributor dan kontak"
                       />
                       <p className="text-xs text-gray-500 mt-1">Informasi distributor</p>
                     </div>
@@ -1853,7 +1866,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, transferOptions: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Opsi transfer data"
+                        placeholder="URL download, protokol akses"
                       />
                       <p className="text-xs text-gray-500 mt-1">Opsi transfer data</p>
                     </div>
@@ -1876,6 +1889,24 @@ export default function Upload() {
                         <option value="dataset">Dataset</option>
                         <option value="series">Series</option>
                         <option value="feature">Feature</option>
+                        <option value="featureType">Feature Type</option>
+                        <option value="attribute">Attribute</option>
+                        <option value="attributeType">Attribute Type</option>
+                        <option value="collectionHardware">Collection Hardware</option>
+                        <option value="collectionSession">Collection Session</option>
+                        <option value="tile">Tile</option>
+                        <option value="model">Model</option>
+                        <option value="fieldSession">Field Session</option>
+                        <option value="software">Software</option>
+                        <option value="service">Service</option>
+                        <option value="metadata">Metadata</option>
+                        <option value="initiative">Initiative</option>
+                        <option value="stereomate">Stereomate</option>
+                        <option value="sensor">Sensor</option>
+                        <option value="platformSeries">Platform Series</option>
+                        <option value="sensorSeries">Sensor Series</option>
+                        <option value="productionSeries">Production Series</option>
+                        <option value="transferAggregate">Transfer Aggregate</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Cakupan kualitas data</p>
                     </div>
@@ -1889,7 +1920,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, lineage: e.target.value }))}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Riwayat pengolahan data"
+                        placeholder="Sumber data, metode pengumpulan, proses pengolahan"
                       />
                       <p className="text-xs text-gray-500 mt-1">Riwayat data (lineage)</p>
                     </div>
@@ -1903,7 +1934,7 @@ export default function Upload() {
                         value={metadata.accuracy}
                         onChange={(e) => setMetadata(prev => ({ ...prev, accuracy: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Akurasi data"
+                        placeholder="Positional accuracy, attribute accuracy"
                       />
                       <p className="text-xs text-gray-500 mt-1">Akurasi data</p>
                     </div>
@@ -1917,7 +1948,7 @@ export default function Upload() {
                         value={metadata.completeness}
                         onChange={(e) => setMetadata(prev => ({ ...prev, completeness: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kelengkapan data"
+                        placeholder="Persentase data yang lengkap"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kelengkapan data</p>
                     </div>
@@ -1931,7 +1962,7 @@ export default function Upload() {
                         value={metadata.consistency}
                         onChange={(e) => setMetadata(prev => ({ ...prev, consistency: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Konsistensi data"
+                        placeholder="Tingkat konsistensi antar atribut"
                       />
                       <p className="text-xs text-gray-500 mt-1">Konsistensi data</p>
                     </div>
@@ -1950,7 +1981,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, useConstraints: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kendala penggunaan"
+                        placeholder="Lisensi, hak cipta, pembatasan akses"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kendala penggunaan</p>
                     </div>
@@ -1964,7 +1995,7 @@ export default function Upload() {
                         value={metadata.accessConstraints}
                         onChange={(e) => setMetadata(prev => ({ ...prev, accessConstraints: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kendala akses"
+                        placeholder="restricted, confidential, protected"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kendala akses</p>
                     </div>
@@ -1978,7 +2009,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, otherConstraints: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Kendala lainnya"
+                        placeholder="Persyaratan khusus penggunaan"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kendala lainnya</p>
                     </div>

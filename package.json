@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "prisma generate && next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -23,6 +23,8 @@
     "nodemailer": "^7.0.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "xml2js": "^0.6.2",
     "xmlbuilder2": "^3.1.1"
   },

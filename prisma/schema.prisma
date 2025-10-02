@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -104,6 +104,7 @@ model Metadata {
   useConstraints    String?  // usage restrictions
   accessConstraints String?  // access restrictions
   otherConstraints  String?  // other restrictions
+  resourceConstraints String? // resource usage constraints (ISO 19115 identificationInfo)
 
   // Reference System
   referenceSystem   String?  // coordinate reference system
