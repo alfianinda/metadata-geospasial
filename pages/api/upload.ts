@@ -369,11 +369,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(401).json({ message: 'User not found. Please log in again.' })
     }
 
+    // Generate UUID if fileIdentifier is empty
+    const fileIdentifier = formData.fileIdentifier?.trim() || `uuid:${require('crypto').randomUUID()}`
+
     // Create metadata record with all fields
     const metadata = await prisma.metadata.create({
       data: {
         // MD_Metadata Root (ISO 19115)
-        fileIdentifier: formData.fileIdentifier || null,
+        fileIdentifier: fileIdentifier,
         language: formData.language || 'ind',
         characterSet: formData.characterSet || 'utf8',
         parentIdentifier: formData.parentIdentifier || null,

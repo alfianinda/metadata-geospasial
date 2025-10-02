@@ -265,7 +265,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else {
         // For full metadata update, include all fields
         // MD_Metadata Root
-        updateData.fileIdentifier = fileIdentifier?.trim()
+        updateData.fileIdentifier = fileIdentifier?.trim() || `uuid:${require('crypto').randomUUID()}`
         updateData.language = language?.trim() || 'ind'
         updateData.characterSet = characterSet || 'utf8'
         updateData.parentIdentifier = parentIdentifier?.trim()

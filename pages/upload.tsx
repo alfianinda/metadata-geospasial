@@ -898,7 +898,7 @@ export default function Upload() {
         setMessage('File berhasil diupload! Metadata sedang dibuat...')
         setError(null)
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push(`/metadata/${data.metadataId}`)
         }, 2000)
       } else if (response.status === 401) {
         setError('Sesi login Anda telah berakhir. Silakan login kembali.')
