@@ -87,15 +87,112 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Convert null values to undefined for compatibility with MetadataData interface
      const metadataData = {
        ...metadata,
+       // MD_Metadata (Root) fields
+       fileIdentifier: metadata.fileIdentifier || metadata.id,
+       language: metadata.language || undefined,
+       characterSet: metadata.characterSet || undefined,
        parentIdentifier: metadata.parentIdentifier || undefined,
        hierarchyLevel: metadata.hierarchyLevel || undefined,
        hierarchyLevelName: metadata.hierarchyLevelName || undefined,
-       characterSet: metadata.characterSet || undefined,
-       supplementalInfo: metadata.supplementalInfo || undefined,
-       scope: metadata.scope || undefined,
+       contactName: metadata.contactName || undefined,
+       contactEmail: metadata.contactEmail || undefined,
+       dateStamp: metadata.dateStamp ? new Date(metadata.dateStamp) : undefined,
+       metadataStandardName: metadata.metadataStandardName || undefined,
+       metadataStandardVersion: metadata.metadataStandardVersion || undefined,
+       dataSetURI: metadata.dataSetURI || undefined,
+       locale: metadata.locale || undefined,
+
+       // identificationInfo fields
+       title: metadata.title,
        abstract: metadata.abstract || undefined,
        purpose: metadata.purpose || undefined,
        status: metadata.status || undefined,
+       pointOfContact: metadata.pointOfContact || undefined,
+       descriptiveKeywords: metadata.descriptiveKeywords || undefined,
+       extent: metadata.geographicExtent || metadata.extent || undefined,
+       additionalDocumentation: metadata.supplementalInfo || metadata.additionalDocumentation || undefined,
+       processingLevel: metadata.processingLevel || undefined,
+       resourceMaintenance: metadata.updateFrequency || metadata.resourceMaintenance || undefined,
+       graphicOverview: metadata.graphicOverview || undefined,
+       resourceFormat: metadata.dataFormat || metadata.resourceFormat || undefined,
+       resourceSpecificUsage: metadata.resourceSpecificUsage || undefined,
+       resourceConstraints: metadata.resourceConstraints || undefined,
+
+       // spatialRepresentationInfo fields
+       spatialRepresentationType: metadata.spatialRepresentationType || undefined,
+       axisDimensionProperties: metadata.axisDimensionProperties || undefined,
+       cellGeometry: metadata.cellGeometry || undefined,
+       georectified: metadata.georectified || undefined,
+       georeferenceable: metadata.georeferenceable || undefined,
+
+       // referenceSystemInfo fields
+       referenceSystemIdentifier: metadata.referenceSystemIdentifier || metadata.coordinateSystem || undefined,
+       referenceSystemType: metadata.referenceSystemType || undefined,
+
+       // contentInfo fields
+       attributeDescription: (() => {
+         if (metadata.attributeInfo) {
+           if (typeof metadata.attributeInfo === 'string') {
+             try {
+               const parsed = JSON.parse(metadata.attributeInfo);
+               return typeof parsed === 'object' && parsed.description ? parsed.description : JSON.stringify(parsed);
+             } catch {
+               return metadata.attributeInfo;
+             }
+           } else if (typeof metadata.attributeInfo === 'object') {
+             return metadata.attributeInfo.description || JSON.stringify(metadata.attributeInfo);
+           }
+         }
+         return metadata.attributeDescription || undefined;
+       })(),
+       contentType: metadata.contentType || undefined,
+
+       // distributionInfo fields
+       distributionFormat: metadata.distributionFormat || undefined,
+       distributor: metadata.distributor || undefined,
+       onlineResource: metadata.onlineResource || undefined,
+       transferOptions: (() => {
+         if (!metadata.transferOptions) return undefined;
+         if (Array.isArray(metadata.transferOptions)) return metadata.transferOptions;
+         if (typeof metadata.transferOptions === 'string') {
+           try {
+             const parsed = JSON.parse(metadata.transferOptions);
+             return Array.isArray(parsed) ? parsed : undefined;
+           } catch (e) {
+             console.error('Failed to parse transferOptions:', metadata.transferOptions);
+             return undefined;
+           }
+         }
+         return undefined;
+       })(),
+
+       // dataQualityInfo fields
+       scope: metadata.scope || undefined,
+       lineage: metadata.lineage || undefined,
+       accuracy: metadata.accuracy || undefined,
+       completeness: metadata.completeness || undefined,
+       consistency: metadata.consistency || undefined,
+
+       // metadataConstraints fields
+       useConstraints: metadata.useConstraints || undefined,
+       accessConstraints: metadata.accessConstraints || undefined,
+       otherConstraints: metadata.otherConstraints || undefined,
+
+       // File info fields
+       originalFileName: metadata.originalFileName || undefined,
+       featureCount: metadata.featureCount || undefined,
+       fileSize: metadata.fileSize ? Number(metadata.fileSize) : undefined,
+       geometryType: metadata.geometryType || undefined,
+       dataFormat: metadata.dataFormat || undefined,
+
+       // SNI Specific
+       sniCompliant: metadata.sniCompliant || undefined,
+       sniVersion: metadata.sniVersion || undefined,
+       sniStandard: metadata.sniStandard || undefined,
+       bahasa: metadata.bahasa || undefined,
+
+       // Legacy fields (keeping for backward compatibility)
+       supplementalInfo: metadata.supplementalInfo || undefined,
        updateFrequency: metadata.updateFrequency || undefined,
        keywords: metadata.keywords ? metadata.keywords.split(',').map(k => k.trim()) : undefined,
        topicCategory: metadata.topicCategory || undefined,
@@ -119,9 +216,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        temporalStart: metadata.temporalStart ? new Date(metadata.temporalStart) : undefined,
        temporalEnd: metadata.temporalEnd ? new Date(metadata.temporalEnd) : undefined,
        dateType: metadata.dateType || undefined,
-       dateStamp: metadata.dateStamp ? new Date(metadata.dateStamp) : undefined,
-       contactName: metadata.contactName || undefined,
-       contactEmail: metadata.contactEmail || undefined,
        contactOrganization: metadata.contactOrganization || undefined,
        contactRole: metadata.contactRole || undefined,
        contactPhone: metadata.contactPhone || undefined,
@@ -129,22 +223,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        metadataContactName: metadata.metadataContactName || undefined,
        metadataContactEmail: metadata.metadataContactEmail || undefined,
        metadataContactOrganization: metadata.metadataContactOrganization || undefined,
-       distributionFormat: metadata.distributionFormat || undefined,
-       onlineResource: metadata.onlineResource || undefined,
-       transferOptions: (() => {
-         if (!metadata.transferOptions) return undefined;
-         if (Array.isArray(metadata.transferOptions)) return metadata.transferOptions;
-         if (typeof metadata.transferOptions === 'string') {
-           try {
-             const parsed = JSON.parse(metadata.transferOptions);
-             return Array.isArray(parsed) ? parsed : undefined;
-           } catch (e) {
-             console.error('Failed to parse transferOptions:', metadata.transferOptions);
-             return undefined;
-           }
-         }
-         return undefined;
-       })(),
        attributeInfo: (() => {
          if (!metadata.attributeInfo) return undefined;
          if (typeof metadata.attributeInfo === 'object') return metadata.attributeInfo;
@@ -157,24 +235,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
            }
          }
          return undefined;
-       })(),
-       lineage: metadata.lineage || undefined,
-       accuracy: metadata.accuracy || undefined,
-       completeness: metadata.completeness || undefined,
-       consistency: metadata.consistency || undefined,
-       useConstraints: metadata.useConstraints || undefined,
-       accessConstraints: metadata.accessConstraints || undefined,
-       otherConstraints: metadata.otherConstraints || undefined,
-       featureCount: metadata.featureCount || undefined,
-       fileSize: metadata.fileSize ? Number(metadata.fileSize) : undefined,
-       geometryType: metadata.geometryType || undefined,
-       dataFormat: metadata.dataFormat || undefined,
-       processingLevel: metadata.processingLevel || undefined,
-       sniCompliant: metadata.sniCompliant || undefined,
-       sniVersion: metadata.sniVersion || undefined,
-       sniStandard: metadata.sniStandard || undefined,
-       bahasa: metadata.bahasa || undefined,
-       fileIdentifier: metadata.id
+       })()
      }
 
     // Generate XML/JSON based on format

@@ -52,6 +52,7 @@ interface MetadataData {
 
   // Distribution
   distributionFormat?: string
+  distributor?: string
   onlineResource?: string
   transferOptions?: Array<{
     protocol: string
@@ -79,6 +80,34 @@ interface MetadataData {
   geometryType?: string
   dataFormat?: string
   processingLevel?: string
+
+  // Spatial Representation
+  spatialRepresentationType?: string
+  axisDimensionProperties?: string
+  cellGeometry?: string
+  georectified?: boolean
+  georeferenceable?: boolean
+
+  // Reference System
+  referenceSystemIdentifier?: string
+  referenceSystemType?: string
+
+  // Content Info
+  attributeDescription?: string
+  contentType?: string
+
+  // Additional Identification Info
+  pointOfContact?: string
+  descriptiveKeywords?: string
+  additionalDocumentation?: string
+  resourceMaintenance?: string
+  graphicOverview?: string
+  resourceFormat?: string
+  resourceSpecificUsage?: string
+  resourceConstraints?: string
+
+  // File Info
+  originalFileName?: string
 
   // SNI Specific
   sniCompliant?: boolean
@@ -251,6 +280,20 @@ export function generateISO19139XML(metadata: MetadataData): string {
       .txt(metadata.status.toLowerCase())
   }
 
+  // Point of Contact
+  if (metadata.pointOfContact) {
+    const pointOfContact = identification.ele('gmd:pointOfContact')
+      .ele('gmd:CI_ResponsibleParty')
+
+    pointOfContact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt(metadata.pointOfContact)
+
+    pointOfContact.ele('gmd:role')
+      .ele('gmd:CI_RoleCode', { codeListValue: 'pointOfContact' })
+      .txt('pointOfContact')
+  }
+
   // Keywords
   if (metadata.keywords && metadata.keywords.length > 0) {
     const descriptiveKeywords = identification.ele('gmd:descriptiveKeywords')
@@ -260,6 +303,22 @@ export function generateISO19139XML(metadata: MetadataData): string {
       descriptiveKeywords.ele('gmd:keyword')
         .ele('gco:CharacterString')
         .txt(keyword)
+    })
+
+    descriptiveKeywords.ele('gmd:type')
+      .ele('gmd:MD_KeywordTypeCode', { codeListValue: 'theme' })
+      .txt('theme')
+  }
+
+  // Descriptive Keywords (additional keywords field)
+  if (metadata.descriptiveKeywords) {
+    const descriptiveKeywords = identification.ele('gmd:descriptiveKeywords')
+      .ele('gmd:MD_Keywords')
+
+    metadata.descriptiveKeywords.split(',').forEach(keyword => {
+      descriptiveKeywords.ele('gmd:keyword')
+        .ele('gco:CharacterString')
+        .txt(keyword.trim())
     })
 
     descriptiveKeywords.ele('gmd:type')
@@ -346,8 +405,105 @@ export function generateISO19139XML(metadata: MetadataData): string {
     }
   }
 
+  // Additional Documentation
+  if (metadata.additionalDocumentation) {
+    identification.ele('gmd:supplementalInformation')
+      .ele('gco:CharacterString')
+      .txt(metadata.additionalDocumentation)
+  }
+
+  // Processing Level
+  if (metadata.processingLevel) {
+    identification.ele('gmd:processingLevel')
+      .ele('gmd:MD_Identifier')
+      .ele('gmd:code')
+      .ele('gco:CharacterString')
+      .txt(metadata.processingLevel)
+  }
+
+  // Resource Maintenance
+  if (metadata.resourceMaintenance) {
+    const maintenance = identification.ele('gmd:resourceMaintenance')
+      .ele('gmd:MD_MaintenanceInformation')
+
+    maintenance.ele('gmd:maintenanceAndUpdateFrequency')
+      .ele('gmd:MD_MaintenanceFrequencyCode', { codeListValue: 'asNeeded' })
+      .txt('asNeeded')
+
+    maintenance.ele('gmd:maintenanceNote')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceMaintenance)
+  }
+
+  // Graphic Overview
+  if (metadata.graphicOverview) {
+    const graphicOverview = identification.ele('gmd:graphicOverview')
+      .ele('gmd:MD_BrowseGraphic')
+
+    graphicOverview.ele('gmd:fileName')
+      .ele('gco:CharacterString')
+      .txt(metadata.graphicOverview)
+
+    graphicOverview.ele('gmd:fileDescription')
+      .ele('gco:CharacterString')
+      .txt('Graphic overview of the dataset')
+  }
+
+  // Resource Format
+  if (metadata.resourceFormat) {
+    identification.ele('gmd:resourceFormat')
+      .ele('gmd:MD_Format')
+      .ele('gmd:name')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceFormat)
+  }
+
+  // Resource Specific Usage
+  if (metadata.resourceSpecificUsage) {
+    const usage = identification.ele('gmd:resourceSpecificUsage')
+      .ele('gmd:MD_Usage')
+
+    usage.ele('gmd:specificUsage')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceSpecificUsage)
+
+    usage.ele('gmd:userContactInfo')
+      .ele('gmd:CI_ResponsibleParty')
+      .ele('gmd:role')
+      .ele('gmd:CI_RoleCode', { codeListValue: 'user' })
+      .txt('user')
+  }
+
+  // Resource Constraints
+  if (metadata.resourceConstraints) {
+    const constraints = identification.ele('gmd:resourceConstraints')
+      .ele('gmd:MD_LegalConstraints')
+
+    constraints.ele('gmd:useLimitation')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceConstraints)
+  }
+
+  // Content Info
+  if (metadata.attributeDescription || metadata.contentType) {
+    const contentInfo = root.ele('gmd:contentInfo')
+      .ele('gmd:MD_FeatureCatalogueDescription')
+
+    if (metadata.attributeDescription) {
+      contentInfo.ele('gmd:attributeDescription')
+        .ele('gco:CharacterString')
+        .txt(metadata.attributeDescription)
+    }
+
+    if (metadata.contentType) {
+      contentInfo.ele('gmd:contentType')
+        .ele('gmd:MD_CoverageContentTypeCode', { codeListValue: metadata.contentType })
+        .txt(metadata.contentType)
+    }
+  }
+
   // Distribution Info
-  if (metadata.distributionFormat || metadata.onlineResource || metadata.transferOptions) {
+  if (metadata.distributionFormat || metadata.distributor || metadata.onlineResource || metadata.transferOptions) {
     const distribution = root.ele('gmd:distributionInfo')
       .ele('gmd:MD_Distribution')
 
@@ -358,6 +514,18 @@ export function generateISO19139XML(metadata: MetadataData): string {
         .ele('gmd:name')
         .ele('gco:CharacterString')
         .txt(metadata.distributionFormat)
+    }
+
+    // Distributor
+    if (metadata.distributor) {
+      const distributor = distribution.ele('gmd:distributor')
+        .ele('gmd:MD_Distributor')
+
+      distributor.ele('gmd:distributorContact')
+        .ele('gmd:CI_ResponsibleParty')
+        .ele('gmd:organisationName')
+        .ele('gco:CharacterString')
+        .txt(metadata.distributor)
     }
 
     // Transfer Options
@@ -378,7 +546,7 @@ export function generateISO19139XML(metadata: MetadataData): string {
   }
 
   // Data Quality Info
-  if (metadata.lineage || metadata.accuracy) {
+  if (metadata.scope || metadata.lineage || metadata.accuracy || metadata.completeness || metadata.consistency) {
     const dataQuality = root.ele('gmd:dataQualityInfo')
       .ele('gmd:DQ_DataQuality')
 
@@ -386,8 +554,8 @@ export function generateISO19139XML(metadata: MetadataData): string {
     dataQuality.ele('gmd:scope')
       .ele('gmd:DQ_Scope')
       .ele('gmd:level')
-      .ele('gmd:MD_ScopeCode', { codeListValue: 'dataset' })
-      .txt('dataset')
+      .ele('gmd:MD_ScopeCode', { codeListValue: metadata.scope || 'dataset' })
+      .txt(metadata.scope || 'dataset')
 
     // Lineage
     if (metadata.lineage) {
@@ -396,6 +564,74 @@ export function generateISO19139XML(metadata: MetadataData): string {
         .ele('gmd:statement')
         .ele('gco:CharacterString')
         .txt(metadata.lineage)
+    }
+
+    // Accuracy
+    if (metadata.accuracy) {
+      const accuracyReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_AbsoluteExternalPositionalAccuracy')
+
+      accuracyReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.accuracy)
+    }
+
+    // Completeness
+    if (metadata.completeness) {
+      const completenessReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_Completeness')
+
+      completenessReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.completeness)
+    }
+
+    // Consistency
+    if (metadata.consistency) {
+      const consistencyReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_LogicalConsistency')
+
+      consistencyReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.consistency)
+    }
+  }
+
+  // Metadata Constraints
+  if (metadata.useConstraints || metadata.accessConstraints || metadata.otherConstraints) {
+    const constraints = root.ele('gmd:metadataConstraints')
+      .ele('gmd:MD_LegalConstraints')
+
+    if (metadata.useConstraints) {
+      constraints.ele('gmd:useConstraints')
+        .ele('gmd:MD_RestrictionCode', { codeListValue: 'copyright' })
+        .txt('copyright')
+
+      constraints.ele('gmd:useLimitation')
+        .ele('gco:CharacterString')
+        .txt(metadata.useConstraints)
+    }
+
+    if (metadata.accessConstraints) {
+      constraints.ele('gmd:accessConstraints')
+        .ele('gmd:MD_RestrictionCode', { codeListValue: 'otherRestrictions' })
+        .txt('otherRestrictions')
+
+      constraints.ele('gmd:accessLimitation')
+        .ele('gco:CharacterString')
+        .txt(metadata.accessConstraints)
+    }
+
+    if (metadata.otherConstraints) {
+      constraints.ele('gmd:otherConstraints')
+        .ele('gco:CharacterString')
+        .txt(metadata.otherConstraints)
     }
   }
 
@@ -460,13 +696,42 @@ export function generateSNIMetadata(metadata: MetadataData): string {
           }
         },
 
+        'technical': {
+          'feature_count': metadata.featureCount || 0,
+          'file_size': metadata.fileSize || 0,
+          'geometry_type': metadata.geometryType || '',
+          'data_format': metadata.dataFormat || '',
+          'processing_level': metadata.processingLevel || '',
+          'original_file_name': metadata.originalFileName || ''
+        },
+
+        'spatial_representation': {
+          'spatial_representation_type': metadata.spatialRepresentationType || '',
+          'axis_dimension_properties': metadata.axisDimensionProperties || '',
+          'cell_geometry': metadata.cellGeometry || '',
+          'georectified': metadata.georectified || false,
+          'georeferenceable': metadata.georeferenceable || false
+        },
+
+        'reference_system': {
+          'reference_system_identifier': metadata.referenceSystemIdentifier || metadata.coordinateSystem || '',
+          'reference_system_type': metadata.referenceSystemType || ''
+        },
+
+        'content': {
+          'attribute_description': metadata.attributeDescription || '',
+          'content_type': metadata.contentType || ''
+        },
+
         'distribution': {
-          'format': metadata.distributionFormat || '',
+          'distribution_format': metadata.distributionFormat || '',
+          'distributor': metadata.distributor || '',
           'online_resource': metadata.onlineResource || '',
           'transfer_options': metadata.transferOptions || []
         },
 
         'data_quality': {
+          'scope': metadata.scope || '',
           'lineage': metadata.lineage || '',
           'accuracy': metadata.accuracy || '',
           'completeness': metadata.completeness || '',
@@ -479,12 +744,15 @@ export function generateSNIMetadata(metadata: MetadataData): string {
           'other_constraints': metadata.otherConstraints || ''
         },
 
-        'technical': {
-          'feature_count': metadata.featureCount || 0,
-          'file_size': metadata.fileSize || 0,
-          'geometry_type': metadata.geometryType || '',
-          'data_format': metadata.dataFormat || '',
-          'processing_level': metadata.processingLevel || ''
+        'identification': {
+          'point_of_contact': metadata.pointOfContact || '',
+          'descriptive_keywords': metadata.descriptiveKeywords || '',
+          'additional_documentation': metadata.additionalDocumentation || '',
+          'resource_maintenance': metadata.resourceMaintenance || '',
+          'graphic_overview': metadata.graphicOverview || '',
+          'resource_format': metadata.resourceFormat || '',
+          'resource_specific_usage': metadata.resourceSpecificUsage || '',
+          'resource_constraints': metadata.resourceConstraints || ''
         }
       }
     }
@@ -659,8 +927,49 @@ export function generateSNIXML(metadata: MetadataData): string {
     .ele('gco:CharacterString')
     .txt('1.0')
 
+  // Spatial Representation Info
+  if (metadata.spatialRepresentationType) {
+    const spatialRepresentation = root.ele('gmd:spatialRepresentationInfo')
+      .ele('gmd:MD_VectorSpatialRepresentation') // or appropriate type based on spatialRepresentationType
+
+    if (metadata.spatialRepresentationType) {
+      spatialRepresentation.ele('gmd:topologyLevel')
+        .ele('gmd:MD_TopologyLevelCode', { codeListValue: metadata.spatialRepresentationType })
+        .txt(metadata.spatialRepresentationType)
+    }
+
+    if (metadata.axisDimensionProperties) {
+      const axisDimension = spatialRepresentation.ele('gmd:axisDimensionProperties')
+        .ele('gmd:MD_Dimension')
+
+      axisDimension.ele('gmd:dimensionName')
+        .ele('gmd:MD_DimensionNameTypeCode', { codeListValue: 'row' })
+        .txt('row')
+
+      axisDimension.ele('gmd:dimensionSize')
+        .ele('gco:Integer')
+        .txt('1') // placeholder
+
+      axisDimension.ele('gmd:resolution')
+        .ele('gco:Measure', { uom: 'meter' })
+        .txt(metadata.axisDimensionProperties)
+    }
+
+    if (metadata.georectified !== undefined) {
+      spatialRepresentation.ele('gmd:georectified')
+        .ele('gco:Boolean')
+        .txt(metadata.georectified ? 'true' : 'false')
+    }
+
+    if (metadata.georeferenceable !== undefined) {
+      spatialRepresentation.ele('gmd:georeferenceable')
+        .ele('gco:Boolean')
+        .txt(metadata.georeferenceable ? 'true' : 'false')
+    }
+  }
+
   // Reference System Info
-  if (metadata.coordinateSystem) {
+  if (metadata.coordinateSystem || metadata.referenceSystemIdentifier) {
     const referenceSystem = root.ele('gmd:referenceSystemInfo')
       .ele('gmd:MD_ReferenceSystem')
 
@@ -668,7 +977,7 @@ export function generateSNIXML(metadata: MetadataData): string {
       .ele('gmd:RS_Identifier')
       .ele('gmd:code')
       .ele('gco:CharacterString')
-      .txt(metadata.coordinateSystem)
+      .txt(metadata.referenceSystemIdentifier || metadata.coordinateSystem || 'EPSG:4326')
   }
 
   // Identification Info
@@ -842,8 +1151,179 @@ export function generateSNIXML(metadata: MetadataData): string {
     }
   }
 
+  // Content Info
+  if (metadata.attributeDescription || metadata.contentType) {
+    const contentInfo = root.ele('gmd:contentInfo')
+      .ele('gmd:MD_FeatureCatalogueDescription')
+
+    if (metadata.attributeDescription) {
+      contentInfo.ele('gmd:attributeDescription')
+        .ele('gco:CharacterString')
+        .txt(metadata.attributeDescription)
+    }
+
+    if (metadata.contentType) {
+      contentInfo.ele('gmd:contentType')
+        .ele('gmd:MD_CoverageContentTypeCode', { codeListValue: metadata.contentType })
+        .txt(metadata.contentType)
+    }
+  }
+
+  // Identification Info additional fields
+  // Point of Contact
+  if (metadata.pointOfContact) {
+    const pointOfContact = identification.ele('gmd:pointOfContact')
+      .ele('gmd:CI_ResponsibleParty')
+
+    pointOfContact.ele('gmd:individualName')
+      .ele('gco:CharacterString')
+      .txt(metadata.pointOfContact)
+
+    pointOfContact.ele('gmd:role')
+      .ele('gmd:CI_RoleCode', { codeListValue: 'pointOfContact' })
+      .txt('pointOfContact')
+  }
+
+  // Descriptive Keywords (additional keywords field)
+  if (metadata.descriptiveKeywords) {
+    const descriptiveKeywords = identification.ele('gmd:descriptiveKeywords')
+      .ele('gmd:MD_Keywords')
+
+    metadata.descriptiveKeywords.split(',').forEach(keyword => {
+      descriptiveKeywords.ele('gmd:keyword')
+        .ele('gco:CharacterString')
+        .txt(keyword.trim())
+    })
+
+    descriptiveKeywords.ele('gmd:type')
+      .ele('gmd:MD_KeywordTypeCode', { codeListValue: 'theme' })
+      .txt('theme')
+  }
+
+  // Additional Documentation
+  if (metadata.additionalDocumentation) {
+    identification.ele('gmd:supplementalInformation')
+      .ele('gco:CharacterString')
+      .txt(metadata.additionalDocumentation)
+  }
+
+  // Processing Level
+  if (metadata.processingLevel) {
+    identification.ele('gmd:processingLevel')
+      .ele('gmd:MD_Identifier')
+      .ele('gmd:code')
+      .ele('gco:CharacterString')
+      .txt(metadata.processingLevel)
+  }
+
+  // Resource Maintenance
+  if (metadata.resourceMaintenance) {
+    const maintenance = identification.ele('gmd:resourceMaintenance')
+      .ele('gmd:MD_MaintenanceInformation')
+
+    maintenance.ele('gmd:maintenanceAndUpdateFrequency')
+      .ele('gmd:MD_MaintenanceFrequencyCode', { codeListValue: 'asNeeded' })
+      .txt('asNeeded')
+
+    maintenance.ele('gmd:maintenanceNote')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceMaintenance)
+  }
+
+  // Graphic Overview
+  if (metadata.graphicOverview) {
+    const graphicOverview = identification.ele('gmd:graphicOverview')
+      .ele('gmd:MD_BrowseGraphic')
+
+    graphicOverview.ele('gmd:fileName')
+      .ele('gco:CharacterString')
+      .txt(metadata.graphicOverview)
+
+    graphicOverview.ele('gmd:fileDescription')
+      .ele('gco:CharacterString')
+      .txt('Graphic overview of the dataset')
+  }
+
+  // Resource Format
+  if (metadata.resourceFormat) {
+    identification.ele('gmd:resourceFormat')
+      .ele('gmd:MD_Format')
+      .ele('gmd:name')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceFormat)
+  }
+
+  // Resource Specific Usage
+  if (metadata.resourceSpecificUsage) {
+    const usage = identification.ele('gmd:resourceSpecificUsage')
+      .ele('gmd:MD_Usage')
+
+    usage.ele('gmd:specificUsage')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceSpecificUsage)
+
+    usage.ele('gmd:userContactInfo')
+      .ele('gmd:CI_ResponsibleParty')
+      .ele('gmd:role')
+      .ele('gmd:CI_RoleCode', { codeListValue: 'user' })
+      .txt('user')
+  }
+
+  // Resource Constraints
+  if (metadata.resourceConstraints) {
+    const constraints = identification.ele('gmd:resourceConstraints')
+      .ele('gmd:MD_LegalConstraints')
+
+    constraints.ele('gmd:useLimitation')
+      .ele('gco:CharacterString')
+      .txt(metadata.resourceConstraints)
+  }
+
+  // Distribution Info
+  if (metadata.distributionFormat || metadata.distributor || metadata.onlineResource || metadata.transferOptions) {
+    const distribution = root.ele('gmd:distributionInfo')
+      .ele('gmd:MD_Distribution')
+
+    // Distribution Format
+    if (metadata.distributionFormat) {
+      distribution.ele('gmd:distributionFormat')
+        .ele('gmd:MD_Format')
+        .ele('gmd:name')
+        .ele('gco:CharacterString')
+        .txt(metadata.distributionFormat)
+    }
+
+    // Distributor
+    if (metadata.distributor) {
+      const distributor = distribution.ele('gmd:distributor')
+        .ele('gmd:MD_Distributor')
+
+      distributor.ele('gmd:distributorContact')
+        .ele('gmd:CI_ResponsibleParty')
+        .ele('gmd:organisationName')
+        .ele('gco:CharacterString')
+        .txt(metadata.distributor)
+    }
+
+    // Transfer Options
+    if (metadata.transferOptions && metadata.transferOptions.length > 0) {
+      metadata.transferOptions.forEach(option => {
+        const transferOption = distribution.ele('gmd:transferOptions')
+          .ele('gmd:MD_DigitalTransferOptions')
+
+        if (option.url) {
+          transferOption.ele('gmd:onLine')
+            .ele('gmd:CI_OnlineResource')
+            .ele('gmd:linkage')
+            .ele('gmd:URL')
+            .txt(option.url)
+        }
+      })
+    }
+  }
+
   // Data Quality Info
-  if (metadata.lineage || metadata.accuracy) {
+  if (metadata.scope || metadata.lineage || metadata.accuracy || metadata.completeness || metadata.consistency) {
     const dataQuality = root.ele('gmd:dataQualityInfo')
       .ele('gmd:DQ_DataQuality')
 
@@ -851,8 +1331,8 @@ export function generateSNIXML(metadata: MetadataData): string {
     dataQuality.ele('gmd:scope')
       .ele('gmd:DQ_Scope')
       .ele('gmd:level')
-      .ele('gmd:MD_ScopeCode', { codeListValue: 'dataset' })
-      .txt('dataset')
+      .ele('gmd:MD_ScopeCode', { codeListValue: metadata.scope || 'dataset' })
+      .txt(metadata.scope || 'dataset')
 
     // Lineage
     if (metadata.lineage) {
@@ -861,6 +1341,42 @@ export function generateSNIXML(metadata: MetadataData): string {
         .ele('gmd:statement')
         .ele('gco:CharacterString')
         .txt(metadata.lineage)
+    }
+
+    // Accuracy
+    if (metadata.accuracy) {
+      const accuracyReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_AbsoluteExternalPositionalAccuracy')
+
+      accuracyReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.accuracy)
+    }
+
+    // Completeness
+    if (metadata.completeness) {
+      const completenessReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_Completeness')
+
+      completenessReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.completeness)
+    }
+
+    // Consistency
+    if (metadata.consistency) {
+      const consistencyReport = dataQuality.ele('gmd:report')
+        .ele('gmd:DQ_LogicalConsistency')
+
+      consistencyReport.ele('gmd:result')
+        .ele('gmd:DQ_QuantitativeResult')
+        .ele('gmd:value')
+        .ele('gco:Record')
+        .txt(metadata.consistency)
     }
   }
 

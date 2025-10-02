@@ -9,103 +9,103 @@ const metadataEntities = [
   {
     id: 'root',
     name: 'MD_Metadata (Root)',
-    description: 'Elemen root dari metadata geospasial',
+    description: 'Informasi dasar dan pengaturan metadata geospasial',
     required: true,
     children: [
       {
         id: 'fileIdentifier',
         name: 'fileIdentifier',
-        description: 'Identifier unik untuk metadata',
+        description: 'Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset BPS bisa menggunakan format BPS-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.',
         required: false,
-        example: 'uuid:12345678-1234-1234-1234-123456789abc',
+        example: 'BPS-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'language',
         name: 'language',
-        description: 'Bahasa yang digunakan dalam metadata',
+        description: 'Bahasa utama yang digunakan dalam isi metadata. Pilih bahasa yang sesuai dengan konten dataset. Untuk Indonesia, gunakan "ind" (Bahasa Indonesia).',
         required: true,
-        example: 'ind (Bahasa Indonesia)',
+        example: 'ind (Bahasa Indonesia) - untuk metadata dalam bahasa Indonesia',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'characterSet',
         name: 'characterSet',
-        description: 'Character set yang digunakan',
+        description: 'Set karakter yang digunakan untuk menyimpan teks dalam metadata. UTF-8 adalah standar modern yang mendukung semua bahasa termasuk karakter khusus Indonesia.',
         required: false,
-        example: 'utf8',
+        example: 'utf8 - mendukung semua karakter termasuk huruf Indonesia',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'parentIdentifier',
         name: 'parentIdentifier',
-        description: 'Identifier dari metadata parent',
+        description: 'Kode metadata induk jika dataset ini merupakan bagian dari seri data yang lebih besar. Kosongkan jika dataset ini berdiri sendiri.',
         required: false,
-        example: 'uuid:parent-1234-5678-9abc',
+        example: 'BPS-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'hierarchyLevel',
         name: 'hierarchyLevel',
-        description: 'Tingkat hierarki dataset',
+        description: 'Tingkat hierarki data dalam struktur organisasi. "dataset" untuk data tunggal, "series" untuk kumpulan dataset terkait.',
         required: true,
-        example: 'dataset',
+        example: 'dataset - untuk data tunggal seperti peta administrasi satu kabupaten',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'hierarchyLevelName',
         name: 'hierarchyLevelName',
-        description: 'Nama tingkat hierarki',
+        description: 'Nama deskriptif untuk tingkat hierarki yang dipilih. Jelaskan jenis dataset secara spesifik.',
         required: false,
-        example: 'Dataset Geospasial',
+        example: 'Dataset Peta Administrasi Kabupaten - untuk peta batas wilayah',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'contact',
         name: 'contact',
-        description: 'Informasi kontak untuk metadata',
+        description: 'Informasi kontak orang atau organisasi yang bertanggung jawab atas metadata ini. Biasanya adalah pembuat atau pemelihara data.',
         required: true,
-        example: 'Nama: John Doe, Email: john@example.com',
+        example: 'Nama: Ahmad Surya, Email: ahmad@bps.go.id, Organisasi: BPS',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'dateStamp',
         name: 'dateStamp',
-        description: 'Tanggal pembuatan metadata',
+        description: 'Tanggal pembuatan atau terakhir kali metadata ini diperbarui. Format: YYYY-MM-DD.',
         required: false,
-        example: '2024-01-15',
+        example: '2024-01-15 - tanggal pembuatan metadata',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'metadataStandardName',
         name: 'metadataStandardName',
-        description: 'Nama standar metadata',
+        description: 'Nama standar metadata yang digunakan. Untuk Indonesia, gunakan ISO 19115 atau SNI ISO 19115.',
         required: false,
-        example: 'ISO 19115',
+        example: 'ISO 19115 - standar internasional untuk metadata geospasial',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'metadataStandardVersion',
         name: 'metadataStandardVersion',
-        description: 'Versi standar metadata',
+        description: 'Versi spesifik dari standar metadata yang digunakan.',
         required: false,
-        example: '2003/Cor.1:2006',
+        example: '2003/Cor.1:2006 - versi ISO 19115 yang umum digunakan',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'dataSetURI',
         name: 'dataSetURI',
-        description: 'URI untuk mengakses dataset',
+        description: 'Alamat web (URL) lengkap untuk mengakses dataset asli. Kosongkan jika data belum dipublikasikan secara online.',
         required: false,
-        example: 'https://data.example.com/dataset/123',
+        example: 'https://data.bps.go.id/dataset/peta-administrasi-2024',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'locale',
         name: 'locale',
-        description: 'Informasi locale untuk metadata',
+        description: 'Pengaturan bahasa dan budaya untuk metadata. Gunakan kode bahasa ISO 639-1.',
         required: false,
-        example: 'Bahasa Indonesia (id)',
+        example: 'id - untuk bahasa Indonesia',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -113,135 +113,135 @@ const metadataEntities = [
   {
     id: 'identificationInfo',
     name: 'identificationInfo',
-    description: 'Informasi identifikasi dataset',
+    description: 'Informasi utama yang mengidentifikasi dan mendeskripsikan dataset geospasial',
     required: true,
     children: [
       {
         id: 'title',
         name: 'title',
-        description: 'Judul dataset',
+        description: 'Judul lengkap dan deskriptif dari dataset. Harus jelas menggambarkan isi data dan wilayah cakupannya.',
         required: true,
-        example: 'Peta Administrasi Indonesia 2024',
+        example: 'Peta Administrasi Indonesia Tahun 2024 Skala 1:25.000',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'status',
         name: 'status',
-        description: 'Status dataset',
+        description: 'Status terkini dari dataset. Pilih sesuai kondisi data saat ini.',
         required: true,
-        example: 'completed (selesai), ongoing (sedang berlangsung), planned (direncanakan)',
+        example: 'completed - untuk data yang sudah final dan lengkap',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'abstract',
         name: 'abstract',
-        description: 'Ringkasan isi dataset',
+        description: 'Ringkasan lengkap tentang isi, sumber, metode pengumpulan, dan kegunaan dataset. Minimal 100-200 kata.',
         required: true,
-        example: 'Dataset ini berisi peta administrasi Indonesia yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan.',
+        example: 'Dataset ini berisi peta administrasi Indonesia tahun 2024 yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan. Data dikumpulkan dari sumber resmi pemerintah dan telah diverifikasi keakuratannya.',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'purpose',
         name: 'purpose',
-        description: 'Tujuan penggunaan dataset',
+        description: 'Tujuan spesifik penggunaan dataset ini. Jelaskan manfaat dan aplikasi praktis dari data.',
         required: false,
-        example: 'Dataset ini digunakan untuk perencanaan pembangunan, analisis spasial, dan keperluan administrasi pemerintahan.',
+        example: 'Dataset ini digunakan untuk perencanaan pembangunan infrastruktur, analisis spasial wilayah, dan keperluan administrasi pemerintahan daerah.',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'topicCategory',
         name: 'topicCategory',
-        description: 'Kategori topik ISO 19115',
+        description: 'Kategori utama isi data menurut standar ISO 19115. Pilih yang paling sesuai dengan tema dataset.',
         required: false,
-        example: 'boundaries, biota, climatology, economy, elevation, environment, geoscientific, health, imagery, intelligence, inlandWaters, location, oceans, planning, society, structure, transportation, utilities',
+        example: 'boundaries - untuk data batas wilayah dan administrasi',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'spatialResolution',
         name: 'spatialResolution',
-        description: 'Resolusi spasial dataset',
+        description: 'Tingkat detail spasial data. Dapat dinyatakan sebagai skala peta (1:25.000) atau resolusi dalam meter.',
         required: false,
-        example: '1:25.000 (skala), 10 meter (resolusi)',
+        example: '1:25.000 - artinya 1 cm di peta = 25.000 cm di lapangan',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'pointOfContact',
         name: 'pointOfContact',
-        description: 'Titik kontak untuk dataset',
+        description: 'Kontak utama untuk pertanyaan tentang dataset ini. Biasanya adalah ahli teknis atau koordinator data.',
         required: false,
-        example: 'Nama: Jane Smith, Email: jane@bps.go.id, Organisasi: BPS',
+        example: 'Nama: Dr. Ahmad Surya, Email: ahmad.surya@bps.go.id, Jabatan: Koordinator GIS BPS',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'descriptiveKeywords',
         name: 'descriptiveKeywords',
-        description: 'Kata kunci deskriptif',
+        description: 'Kata kunci yang membantu pencarian data. Pisahkan dengan koma, gunakan istilah baku.',
         required: false,
-        example: 'administrasi, peta, indonesia, batas wilayah',
+        example: 'administrasi, peta, indonesia, batas wilayah, kabupaten, provinsi',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'extent',
         name: 'extent',
-        description: 'Cakupan geografis dan temporal',
+        description: 'Cakupan geografis dataset dalam koordinat. Gunakan format bounding box (kotak pembatas).',
         required: true,
-        example: 'Bounding Box: 95.0°E, 141.0°E, -11.0°N, 6.0°N',
+        example: '95.0°BT, 141.0°BT, -11.0°LS, 6.0°LU - mencakup seluruh wilayah Indonesia',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'additionalDocumentation',
         name: 'additionalDocumentation',
-        description: 'Dokumentasi tambahan',
+        description: 'Referensi ke dokumentasi teknis tambahan seperti metodologi pengumpulan data, spesifikasi teknis, atau laporan validasi.',
         required: false,
-        example: 'Link ke dokumentasi teknis atau metodologi',
+        example: 'https://bps.go.id/metodologi-peta-administrasi-2024.pdf',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'processingLevel',
         name: 'processingLevel',
-        description: 'Tingkat pemrosesan data',
+        description: 'Tingkat pengolahan data dari mentah hingga siap pakai.',
         required: false,
-        example: 'raw (mentah), processed (diproses), interpreted (diinterpretasi)',
+        example: 'processed - data sudah dikoreksi dan divalidasi kualitasnya',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'resourceMaintenance',
         name: 'resourceMaintenance',
-        description: 'Informasi maintenance resource',
+        description: 'Informasi tentang frekuensi update dan pemeliharaan dataset.',
         required: false,
-        example: 'Frekuensi update: tahunan',
+        example: 'Update tahunan sesuai dengan perubahan administrasi pemerintahan',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'graphicOverview',
         name: 'graphicOverview',
-        description: 'Gambar overview dataset',
+        description: 'URL atau path ke gambar preview/thumbnail yang menunjukkan contoh isi dataset.',
         required: false,
-        example: 'Thumbnail atau preview gambar dataset',
+        example: 'https://data.bps.go.id/thumbnails/peta-administrasi-2024.jpg',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'resourceFormat',
         name: 'resourceFormat',
-        description: 'Format resource dataset',
+        description: 'Format file digital dari dataset asli.',
         required: false,
-        example: 'GeoJSON, Shapefile, GeoTIFF',
+        example: 'GeoJSON - format modern untuk data vektor berbasis web',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'resourceSpecificUsage',
         name: 'resourceSpecificUsage',
-        description: 'Penggunaan spesifik resource',
+        description: 'Contoh spesifik penggunaan dataset di dunia nyata.',
         required: false,
-        example: 'Digunakan oleh pemerintah daerah untuk perencanaan',
+        example: 'Digunakan oleh Kementerian PUPR untuk perencanaan jalan tol trans-Jawa',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'resourceConstraints',
         name: 'resourceConstraints',
-        description: 'Kendala penggunaan resource',
+        description: 'Ketentuan penggunaan, lisensi, dan pembatasan akses data.',
         required: false,
-        example: 'Lisensi Creative Commons, pembatasan akses',
+        example: 'Lisensi Creative Commons Attribution 4.0, bebas digunakan dengan mencantumkan sumber',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -249,47 +249,47 @@ const metadataEntities = [
   {
     id: 'spatialRepresentationInfo',
     name: 'spatialRepresentationInfo',
-    description: 'Informasi representasi spasial',
+    description: 'Informasi tentang bagaimana data geospasial direpresentasikan dan disimpan secara teknis',
     required: false,
     children: [
       {
         id: 'spatialRepresentationType',
         name: 'spatialRepresentationType',
-        description: 'Tipe representasi spasial',
+        description: 'Jenis struktur data geospasial: 1) vector - data titik/garis/polygon seperti peta jalan, batas wilayah, sungai; 2) grid - data raster seperti citra satelit, DEM, peta kontur; 3) textTable - data tabular dengan kolom koordinat; 4) tin - model triangulasi untuk permukaan 3D; 5) stereoModel - model stereoskopik; 6) video - data video georeferensikan.',
         required: true,
-        example: 'vector, grid, textTable',
+        example: 'vector - untuk Shapefile, GeoJSON, atau data peta digital lainnya',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'axisDimensionProperties',
         name: 'axisDimensionProperties',
-        description: 'Properti dimensi sumbu',
+        description: 'Informasi dimensi spasial data. Untuk data 2D standar, X dan Y adalah koordinat horizontal dan vertikal.',
         required: false,
-        example: 'X: 2D, Y: 2D, Z: opsional',
+        example: 'X: 2D (longitude), Y: 2D (latitude) - untuk data geografis standar',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'cellGeometry',
         name: 'cellGeometry',
-        description: 'Geometri sel untuk grid',
+        description: 'Bentuk geometri dari setiap sel dalam data grid/raster. Point untuk data titik, area untuk data poligon.',
         required: false,
-        example: 'point, area',
+        example: 'area - untuk citra satelit dimana setiap pixel mewakili area tertentu',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'georectified',
         name: 'georectified',
-        description: 'Status georectified',
+        description: 'Apakah data raster telah dikoreksi sehingga memiliki sistem koordinat yang akurat dan dapat di-overlay dengan data lain.',
         required: false,
-        example: 'true/false',
+        example: 'true - untuk citra satelit yang sudah dikoreksi geometrinya',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'georeferenceable',
         name: 'georeferenceable',
-        description: 'Status georeferenceable',
+        description: 'Apakah data memiliki informasi koordinat yang memungkinkan diposisikan di peta dunia.',
         required: false,
-        example: 'true/false',
+        example: 'true - untuk data yang memiliki sistem koordinat geografis',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -297,23 +297,23 @@ const metadataEntities = [
   {
     id: 'referenceSystemInfo',
     name: 'referenceSystemInfo',
-    description: 'Informasi sistem referensi',
+    description: 'Informasi tentang sistem koordinat dan referensi spasial yang digunakan dalam dataset',
     required: false,
     children: [
       {
         id: 'referenceSystemIdentifier',
         name: 'referenceSystemIdentifier',
-        description: 'Identifier sistem referensi',
+        description: 'Kode identifikasi sistem koordinat yang digunakan. EPSG:4326 adalah standar global untuk koordinat geografis.',
         required: true,
-        example: 'EPSG:4326 (WGS84)',
+        example: 'EPSG:4326 - sistem koordinat WGS84 yang digunakan oleh GPS',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'referenceSystemType',
         name: 'referenceSystemType',
-        description: 'Tipe sistem referensi',
+        description: 'Jenis sistem referensi: geodetic untuk koordinat bumi, vertical untuk ketinggian, temporal untuk waktu.',
         required: false,
-        example: 'geodetic, vertical, temporal',
+        example: 'geodetic - untuk sistem koordinat geografis seperti WGS84',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -321,23 +321,23 @@ const metadataEntities = [
   {
     id: 'contentInfo',
     name: 'contentInfo',
-    description: 'Informasi konten dataset',
+    description: 'Informasi detail tentang isi dan atribut data dalam dataset',
     required: false,
     children: [
       {
         id: 'attributeDescription',
         name: 'attributeDescription',
-        description: 'Deskripsi atribut',
+        description: 'Penjelasan detail tentang atribut/kolom data, tipe data, dan makna dari setiap atribut.',
         required: false,
-        example: 'Nama atribut dan deskripsinya',
+        example: 'provinsi: string - nama provinsi, kode_prov: string - kode BPS provinsi, luas_km2: number - luas wilayah dalam km²',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'contentType',
         name: 'contentType',
-        description: 'Tipe konten',
+        description: 'Jenis isi data: image untuk citra, thematicClassification untuk data tematik, physicalMeasurement untuk pengukuran fisik.',
         required: false,
-        example: 'image, thematicClassification, physicalMeasurement',
+        example: 'thematicClassification - untuk data klasifikasi seperti tipe tanah atau penggunaan lahan',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -345,31 +345,31 @@ const metadataEntities = [
   {
     id: 'distributionInfo',
     name: 'distributionInfo',
-    description: 'Informasi distribusi',
+    description: 'Informasi tentang bagaimana dataset dapat didistribusikan dan diakses',
     required: false,
     children: [
       {
         id: 'distributionFormat',
         name: 'distributionFormat',
-        description: 'Format distribusi',
+        description: 'Format file digital untuk distribusi data. Pilih format yang paling sesuai dengan kebutuhan pengguna.',
         required: false,
-        example: 'GeoJSON, Shapefile, GeoTIFF',
+        example: 'GeoJSON - format modern untuk web GIS dan aplikasi mobile',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'distributor',
         name: 'distributor',
-        description: 'Informasi distributor',
+        description: 'Informasi tentang pihak yang mendistribusikan data, termasuk kontak dan tanggung jawab.',
         required: false,
-        example: 'Nama distributor dan kontak',
+        example: 'Badan Pusat Statistik (BPS), Email: data@bps.go.id, Telepon: 021-3843140',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'transferOptions',
         name: 'transferOptions',
-        description: 'Opsi transfer data',
+        description: 'Cara-cara untuk mendapatkan data, seperti URL download, protokol akses, atau persyaratan khusus.',
         required: false,
-        example: 'URL download, protokol akses',
+        example: 'Download via https://data.bps.go.id/download/peta-administrasi.zip, ukuran file: 50MB',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -377,47 +377,47 @@ const metadataEntities = [
   {
     id: 'dataQualityInfo',
     name: 'dataQualityInfo',
-    description: 'Informasi kualitas data',
+    description: 'Informasi tentang kualitas, akurasi, dan keandalan data geospasial',
     required: false,
     children: [
       {
         id: 'scope',
         name: 'scope',
-        description: 'Cakupan kualitas data',
+        description: 'Ruang lingkup penerapan informasi kualitas data ini.',
         required: true,
-        example: 'dataset, series, feature',
+        example: 'dataset - informasi kualitas berlaku untuk seluruh dataset',
         standard: 'ISO 19115 Mandatory'
       },
       {
         id: 'lineage',
         name: 'lineage',
-        description: 'Riwayat data (lineage)',
+        description: 'Riwayat lengkap data dari pengumpulan hingga pemrosesan akhir, termasuk sumber data dan metodologi.',
         required: false,
-        example: 'Sumber data, metode pengumpulan, proses pengolahan',
+        example: 'Data dikumpul dari survey lapangan tahun 2023 menggunakan GPS differential, kemudian diverifikasi dengan citra satelit resolusi 0.5m',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'accuracy',
         name: 'accuracy',
-        description: 'Akurasi data',
+        description: 'Tingkat akurasi posisional dan atribut data. Sertakan unit pengukuran dan metode validasi.',
         required: false,
-        example: 'Positional accuracy, attribute accuracy',
+        example: 'Akurasi posisional: ±2.5 meter pada skala 1:25.000, akurasi atribut: 95% sesuai dengan data BPS',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'completeness',
         name: 'completeness',
-        description: 'Kelengkapan data',
+        description: 'Tingkat kelengkapan data dalam persentase atau deskripsi cakupan data yang tersedia.',
         required: false,
-        example: 'Persentase data yang lengkap',
+        example: 'Data lengkap 100% untuk 34 provinsi dan 514 kabupaten/kota di Indonesia',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'consistency',
         name: 'consistency',
-        description: 'Konsistensi data',
+        description: 'Tingkat konsistensi data antar atribut dan dengan data referensi lainnya.',
         required: false,
-        example: 'Tingkat konsistensi antar atribut',
+        example: 'Konsisten dengan data administrasi pemerintah dan tidak ada konflik batas wilayah',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -425,31 +425,31 @@ const metadataEntities = [
   {
     id: 'metadataConstraints',
     name: 'metadataConstraints',
-    description: 'Kendala metadata',
+    description: 'Ketentuan hukum dan pembatasan penggunaan metadata dan dataset terkait',
     required: false,
     children: [
       {
         id: 'useConstraints',
         name: 'useConstraints',
-        description: 'Kendala penggunaan',
+        description: 'Ketentuan penggunaan data termasuk lisensi, hak cipta, dan persyaratan legal.',
         required: false,
-        example: 'Lisensi, hak cipta, pembatasan akses',
+        example: 'Lisensi Creative Commons Attribution 4.0 International (CC BY 4.0) - bebas digunakan dengan mencantumkan sumber',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'accessConstraints',
         name: 'accessConstraints',
-        description: 'Kendala akses',
+        description: 'Pembatasan akses data: public, restricted, confidential, atau protected.',
         required: false,
-        example: 'restricted, confidential, protected',
+        example: 'public - data dapat diakses secara bebas oleh publik',
         standard: 'ISO 19115 Optional'
       },
       {
         id: 'otherConstraints',
         name: 'otherConstraints',
-        description: 'Kendala lainnya',
+        description: 'Ketentuan lain yang tidak tercakup di atas, seperti persyaratan teknis atau etika penggunaan.',
         required: false,
-        example: 'Persyaratan khusus penggunaan',
+        example: 'Data hanya boleh digunakan untuk tujuan non-komersial dan pendidikan',
         standard: 'ISO 19115 Optional'
       }
     ]
@@ -1213,9 +1213,9 @@ export default function Upload() {
                         value={metadata.fileIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, fileIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="uuid:12345678-1234-1234-1234-123456789abc"
+                        placeholder="BPS-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Identifier unik untuk metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset BPS bisa menggunakan format BPS-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1230,7 +1230,7 @@ export default function Upload() {
                         <option value="ind">Bahasa Indonesia (ind)</option>
                         <option value="eng">English (eng)</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Bahasa yang digunakan dalam metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Bahasa utama yang digunakan dalam isi metadata. Pilih bahasa yang sesuai dengan konten dataset. Untuk Indonesia, gunakan "ind" (Bahasa Indonesia).</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1247,7 +1247,7 @@ export default function Upload() {
                         <option value="ascii">ASCII</option>
                         <option value="iso88591">ISO-8859-1</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Character set yang digunakan</p>
+                      <p className="text-xs text-gray-500 mt-1">Set karakter yang digunakan untuk menyimpan teks dalam metadata. UTF-8 adalah standar modern yang mendukung semua bahasa termasuk karakter khusus Indonesia.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1259,9 +1259,9 @@ export default function Upload() {
                         value={metadata.parentIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, parentIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="uuid:parent-1234-5678-9abc"
+                        placeholder="BPS-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Identifier dari metadata parent</p>
+                      <p className="text-xs text-gray-500 mt-1">Kode metadata induk jika dataset ini merupakan bagian dari seri data yang lebih besar. Kosongkan jika dataset ini berdiri sendiri.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1289,7 +1289,7 @@ export default function Upload() {
                         <option value="model">Model</option>
                         <option value="tile">Tile</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Tingkat hierarki dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat hierarki data dalam struktur organisasi. "dataset" untuk data tunggal, "series" untuk kumpulan dataset terkait.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1301,9 +1301,9 @@ export default function Upload() {
                         value={metadata.hierarchyLevelName}
                         onChange={(e) => setMetadata(prev => ({ ...prev, hierarchyLevelName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Dataset Geospasial"
+                        placeholder="Dataset Peta Administrasi Kabupaten - untuk peta batas wilayah"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Nama tingkat hierarki</p>
+                      <p className="text-xs text-gray-500 mt-1">Nama deskriptif untuk tingkat hierarki yang dipilih. Jelaskan jenis dataset secara spesifik.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1315,9 +1315,9 @@ export default function Upload() {
                         value={metadata.contactName || ''}
                         onChange={(e) => setMetadata(prev => ({ ...prev, contactName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="John Doe"
+                        placeholder="Ahmad Surya"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Nama kontak untuk metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Informasi kontak orang atau organisasi yang bertanggung jawab atas metadata ini. Biasanya adalah pembuat atau pemelihara data.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1329,7 +1329,7 @@ export default function Upload() {
                         value={metadata.contactEmail || ''}
                         onChange={(e) => setMetadata(prev => ({ ...prev, contactEmail: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="john@example.com"
+                        placeholder="ahmad@bps.go.id"
                       />
                       <p className="text-xs text-gray-500 mt-1">Email kontak untuk metadata</p>
                     </div>
@@ -1344,7 +1344,7 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, dateStamp: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Tanggal pembuatan metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Tanggal pembuatan atau terakhir kali metadata ini diperbarui. Format: YYYY-MM-DD.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1356,9 +1356,9 @@ export default function Upload() {
                         value={metadata.metadataStandardName}
                         onChange={(e) => setMetadata(prev => ({ ...prev, metadataStandardName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="ISO 19115"
+                        placeholder="ISO 19115 - standar internasional untuk metadata geospasial"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Nama standar metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Nama standar metadata yang digunakan. Untuk Indonesia, gunakan ISO 19115 atau SNI ISO 19115.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1370,9 +1370,9 @@ export default function Upload() {
                         value={metadata.metadataStandardVersion}
                         onChange={(e) => setMetadata(prev => ({ ...prev, metadataStandardVersion: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="2003/Cor.1:2006"
+                        placeholder="2003/Cor.1:2006 - versi ISO 19115 yang umum digunakan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Versi standar metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Versi spesifik dari standar metadata yang digunakan.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1384,9 +1384,9 @@ export default function Upload() {
                         value={metadata.dataSetURI}
                         onChange={(e) => setMetadata(prev => ({ ...prev, dataSetURI: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="https://data.example.com/dataset/123"
+                        placeholder="https://data.bps.go.id/dataset/peta-administrasi-2024"
                       />
-                      <p className="text-xs text-gray-500 mt-1">URI untuk mengakses dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Alamat web (URL) lengkap untuk mengakses dataset asli. Kosongkan jika data belum dipublikasikan secara online.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1398,9 +1398,9 @@ export default function Upload() {
                         value={metadata.locale}
                         onChange={(e) => setMetadata(prev => ({ ...prev, locale: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Bahasa Indonesia (id)"
+                        placeholder="id - untuk bahasa Indonesia"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Informasi locale untuk metadata</p>
+                      <p className="text-xs text-gray-500 mt-1">Pengaturan bahasa dan budaya untuk metadata. Gunakan kode bahasa ISO 639-1.</p>
                     </div>
                   </div>
                 )}
@@ -1417,9 +1417,9 @@ export default function Upload() {
                         value={metadata.title}
                         onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Peta Administrasi Indonesia 2024"
+                        placeholder="Peta Administrasi Indonesia Tahun 2024 Skala 1:25.000"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Judul dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Judul lengkap dan deskriptif dari dataset. Harus jelas menggambarkan isi data dan wilayah cakupannya.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1436,7 +1436,7 @@ export default function Upload() {
                         <option value="planned">Planned</option>
                         <option value="deprecated">Deprecated</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Status dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Status terkini dari dataset. Pilih sesuai kondisi data saat ini.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1448,9 +1448,9 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, abstract: e.target.value }))}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Dataset ini berisi peta administrasi Indonesia yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan."
+                        placeholder="Dataset ini berisi peta administrasi Indonesia tahun 2024 yang mencakup batas-batas wilayah provinsi, kabupaten, dan kecamatan. Data dikumpulkan dari sumber resmi pemerintah dan telah diverifikasi keakuratannya."
                       />
-                      <p className="text-xs text-gray-500 mt-1">Ringkasan isi dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Ringkasan lengkap tentang isi, sumber, metode pengumpulan, dan kegunaan dataset. Minimal 100-200 kata.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1462,9 +1462,9 @@ export default function Upload() {
                         onChange={(e) => setMetadata(prev => ({ ...prev, purpose: e.target.value }))}
                         rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Dataset ini digunakan untuk perencanaan pembangunan, analisis spasial, dan keperluan administrasi pemerintahan."
+                        placeholder="Dataset ini digunakan untuk perencanaan pembangunan infrastruktur, analisis spasial wilayah, dan keperluan administrasi pemerintahan daerah."
                       />
-                      <p className="text-xs text-gray-500 mt-1">Tujuan penggunaan dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Tujuan spesifik penggunaan dataset ini. Jelaskan manfaat dan aplikasi praktis dari data.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1492,7 +1492,7 @@ export default function Upload() {
                         <option value="transportation">Transportation</option>
                         <option value="utilities">Utilities</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Kategori topik ISO 19115</p>
+                      <p className="text-xs text-gray-500 mt-1">Kategori utama isi data menurut standar ISO 19115. Pilih yang paling sesuai dengan tema dataset.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1504,9 +1504,9 @@ export default function Upload() {
                         value={metadata.spatialResolution}
                         onChange={(e) => setMetadata(prev => ({ ...prev, spatialResolution: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="1:25.000 (skala), 10 meter (resolusi)"
+                        placeholder="1:25.000 - artinya 1 cm di peta = 25.000 cm di lapangan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Resolusi spasial dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat detail spasial data. Dapat dinyatakan sebagai skala peta (1:25.000) atau resolusi dalam meter.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1518,9 +1518,9 @@ export default function Upload() {
                         value={metadata.pointOfContact}
                         onChange={(e) => setMetadata(prev => ({ ...prev, pointOfContact: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Nama: Jane Smith, Email: jane@bps.go.id, Organisasi: BPS"
+                        placeholder="Nama: Dr. Ahmad Surya, Email: ahmad.surya@bps.go.id, Jabatan: Koordinator GIS BPS"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Titik kontak untuk dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Kontak utama untuk pertanyaan tentang dataset ini. Biasanya adalah ahli teknis atau koordinator data.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1534,7 +1534,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="administrasi, peta, indonesia, batas wilayah"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kata kunci deskriptif</p>
+                      <p className="text-xs text-gray-500 mt-1">Kata kunci yang membantu pencarian data. Pisahkan dengan koma, gunakan istilah baku.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1548,7 +1548,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Bounding Box: 95.0°E, 141.0°E, -11.0°N, 6.0°N"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Cakupan geografis dan temporal</p>
+                      <p className="text-xs text-gray-500 mt-1">Cakupan geografis dataset dalam koordinat. Gunakan format bounding box (kotak pembatas).</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1562,7 +1562,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Link ke dokumentasi teknis atau metodologi"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Dokumentasi tambahan</p>
+                      <p className="text-xs text-gray-500 mt-1">Referensi ke dokumentasi teknis tambahan seperti metodologi pengumpulan data, spesifikasi teknis, atau laporan validasi.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1579,7 +1579,7 @@ export default function Upload() {
                         <option value="processed">Processed</option>
                         <option value="interpreted">Interpreted</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Tingkat pemrosesan data</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat pengolahan data dari mentah hingga siap pakai.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1593,7 +1593,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Frekuensi update: tahunan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Informasi maintenance resource</p>
+                      <p className="text-xs text-gray-500 mt-1">Informasi tentang frekuensi update dan pemeliharaan dataset.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1607,7 +1607,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Thumbnail atau preview gambar dataset"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Gambar overview dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">URL atau path ke gambar preview/thumbnail yang menunjukkan contoh isi dataset.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1621,7 +1621,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="GeoJSON, Shapefile, GeoTIFF"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Format resource dataset</p>
+                      <p className="text-xs text-gray-500 mt-1">Format file digital dari dataset asli.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1635,7 +1635,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Digunakan oleh pemerintah daerah untuk perencanaan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Penggunaan spesifik resource</p>
+                      <p className="text-xs text-gray-500 mt-1">Contoh spesifik penggunaan dataset di dunia nyata.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1649,7 +1649,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Lisensi Creative Commons, pembatasan akses"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kendala penggunaan resource</p>
+                      <p className="text-xs text-gray-500 mt-1">Ketentuan penggunaan, lisensi, dan pembatasan akses data.</p>
                     </div>
                   </div>
                 )}
@@ -1674,7 +1674,7 @@ export default function Upload() {
                         <option value="stereoModel">Stereo Model</option>
                         <option value="video">Video</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Tipe representasi spasial</p>
+                      <p className="text-xs text-gray-500 mt-1">Jenis struktur data geospasial: 1) vector - data titik/garis/polygon seperti peta jalan, batas wilayah, sungai; 2) grid - data raster seperti citra satelit, DEM, peta kontur; 3) textTable - data tabular dengan kolom koordinat; 4) tin - model triangulasi untuk permukaan 3D; 5) stereoModel - model stereoskopik; 6) video - data video georeferensikan.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1688,7 +1688,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="X: 2D, Y: 2D, Z: opsional"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Properti dimensi sumbu</p>
+                      <p className="text-xs text-gray-500 mt-1">Informasi dimensi spasial data. Untuk data 2D standar, X dan Y adalah koordinat horizontal dan vertikal.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1704,7 +1704,7 @@ export default function Upload() {
                         <option value="point">Point</option>
                         <option value="area">Area</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Geometri sel untuk grid</p>
+                      <p className="text-xs text-gray-500 mt-1">Bentuk geometri dari setiap sel dalam data grid/raster. Point untuk data titik, area untuk data poligon.</p>
                     </div>
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">Georectified</label>
@@ -1718,7 +1718,7 @@ export default function Upload() {
                         />
                         <span className="ml-2 text-sm text-gray-700">Georectified</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Status georectified</p>
+                      <p className="text-xs text-gray-500 mt-1">Apakah data raster telah dikoreksi sehingga memiliki sistem koordinat yang akurat dan dapat di-overlay dengan data lain.</p>
                     </div>
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">Georeferenceable</label>
@@ -1732,7 +1732,7 @@ export default function Upload() {
                         />
                         <span className="ml-2 text-sm text-gray-700">Georeferenceable</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Status georeferenceable</p>
+                      <p className="text-xs text-gray-500 mt-1">Apakah data memiliki informasi koordinat yang memungkinkan diposisikan di peta dunia.</p>
                     </div>
                   </div>
                 )}
@@ -1751,7 +1751,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="EPSG:4326 (WGS84)"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Identifier sistem referensi</p>
+                      <p className="text-xs text-gray-500 mt-1">Kode identifikasi sistem koordinat yang digunakan. EPSG:4326 adalah standar global untuk koordinat geografis.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1771,7 +1771,7 @@ export default function Upload() {
                         <option value="UTM">UTM</option>
                         <option value="Lambert Conformal Conic">Lambert Conformal Conic</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Tipe sistem referensi</p>
+                      <p className="text-xs text-gray-500 mt-1">Jenis sistem referensi: geodetic untuk koordinat bumi, vertical untuk ketinggian, temporal untuk waktu.</p>
                     </div>
                   </div>
                 )}
@@ -1790,7 +1790,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Nama atribut dan deskripsinya"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Deskripsi atribut</p>
+                      <p className="text-xs text-gray-500 mt-1">Penjelasan detail tentang atribut/kolom data, tipe data, dan makna dari setiap atribut.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1807,7 +1807,7 @@ export default function Upload() {
                         <option value="thematicClassification">Thematic Classification</option>
                         <option value="physicalMeasurement">Physical Measurement</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Tipe konten</p>
+                      <p className="text-xs text-gray-500 mt-1">Jenis isi data: image untuk citra, thematicClassification untuk data tematik, physicalMeasurement untuk pengukuran fisik.</p>
                     </div>
                   </div>
                 )}
@@ -1826,7 +1826,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="GeoJSON, Shapefile, GeoTIFF"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Format distribusi</p>
+                      <p className="text-xs text-gray-500 mt-1">Format file yang digunakan untuk mendistribusikan dataset.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1838,9 +1838,9 @@ export default function Upload() {
                         value={metadata.distributor}
                         onChange={(e) => setMetadata(prev => ({ ...prev, distributor: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Nama distributor dan kontak"
+                        placeholder="Badan Pusat Statistik (BPS), Email: data@bps.go.id, Telepon: 021-3507020"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Informasi distributor</p>
+                      <p className="text-xs text-gray-500 mt-1">Informasi tentang organisasi yang mendistribusikan dataset.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1852,9 +1852,9 @@ export default function Upload() {
                         value={metadata.onlineResource}
                         onChange={(e) => setMetadata(prev => ({ ...prev, onlineResource: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="URL sumber online"
+                        placeholder="https://data.bps.go.id/dataset/peta-administrasi-indonesia-2024"
                       />
-                      <p className="text-xs text-gray-500 mt-1">URL sumber online</p>
+                      <p className="text-xs text-gray-500 mt-1">Alamat web lengkap untuk mengakses dataset secara online.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1868,7 +1868,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="URL download, protokol akses"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Opsi transfer data</p>
+                      <p className="text-xs text-gray-500 mt-1">Cara-cara untuk mendapatkan atau mentransfer dataset.</p>
                     </div>
                   </div>
                 )}
@@ -1908,7 +1908,7 @@ export default function Upload() {
                         <option value="productionSeries">Production Series</option>
                         <option value="transferAggregate">Transfer Aggregate</option>
                       </select>
-                      <p className="text-xs text-gray-500 mt-1">Cakupan kualitas data</p>
+                      <p className="text-xs text-gray-500 mt-1">Ruang lingkup yang dinilai kualitas datanya. Biasanya "dataset" untuk keseluruhan data.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1922,7 +1922,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Sumber data, metode pengumpulan, proses pengolahan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Riwayat data (lineage)</p>
+                      <p className="text-xs text-gray-500 mt-1">Riwayat lengkap pengumpulan, pemrosesan, dan transformasi data dari sumber asli hingga menjadi dataset final.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1936,7 +1936,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Positional accuracy, attribute accuracy"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Akurasi data</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat ketepatan dan keakuratan data, baik secara posisional maupun atribut.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1950,7 +1950,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Persentase data yang lengkap"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kelengkapan data</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat kelengkapan data dalam persentase atau deskripsi cakupan wilayah yang tercakup.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1964,7 +1964,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Tingkat konsistensi antar atribut"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Konsistensi data</p>
+                      <p className="text-xs text-gray-500 mt-1">Tingkat konsistensi data antar atribut dan kesesuaian dengan standar yang berlaku.</p>
                     </div>
                   </div>
                 )}
@@ -1983,7 +1983,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Lisensi, hak cipta, pembatasan akses"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kendala penggunaan</p>
+                      <p className="text-xs text-gray-500 mt-1">Ketentuan dan pembatasan penggunaan data, termasuk hak cipta dan lisensi.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1997,7 +1997,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="restricted, confidential, protected"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kendala akses</p>
+                      <p className="text-xs text-gray-500 mt-1">Pembatasan akses terhadap data, seperti restricted, confidential, atau protected.</p>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2011,7 +2011,7 @@ export default function Upload() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Persyaratan khusus penggunaan"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kendala lainnya</p>
+                      <p className="text-xs text-gray-500 mt-1">Ketentuan khusus lainnya yang perlu diperhatikan dalam penggunaan data.</p>
                     </div>
                   </div>
                 )}
@@ -2031,6 +2031,7 @@ export default function Upload() {
                       <option value="SNI-ISO-19139-2019">SNI ISO 19139:2019</option>
                       <option value="SNI-ISO-19119-2019">SNI ISO 19119:2019</option>
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">Standar SNI yang menjadi acuan dalam pembuatan metadata</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2041,8 +2042,9 @@ export default function Upload() {
                       value={metadata.sniVersion}
                       onChange={(e) => setMetadata(prev => ({ ...prev, sniVersion: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="1.0"
+                      placeholder="1.0 - versi pertama standar SNI ISO 19115:2019"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Versi spesifik dari standar SNI yang digunakan untuk validasi metadata</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2056,6 +2058,7 @@ export default function Upload() {
                       <option value="id">Indonesia</option>
                       <option value="en">English</option>
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">Bahasa utama yang digunakan dalam metadata. Untuk Indonesia, gunakan "id"</p>
                   </div>
                 </div>
 

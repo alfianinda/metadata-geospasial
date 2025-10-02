@@ -1233,7 +1233,7 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Descriptive Keywords
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.keywords || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.descriptiveKeywords || metadata.keywords || 'Not specified'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1327,7 +1327,7 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reference System Identifier
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.coordinateSystem || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.referenceSystemIdentifier || metadata.coordinateSystem || 'Not specified'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
