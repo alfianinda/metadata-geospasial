@@ -555,6 +555,7 @@ export default function Upload() {
   }, [activeSection])
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['root']))
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [autoFillMessage, setAutoFillMessage] = useState('')
   const router = useRouter()
 
   const [metadata, setMetadata] = useState<MetadataForm>({
@@ -772,6 +773,7 @@ export default function Upload() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     setFiles(selectedFiles)
+    setAutoFillMessage('') // Clear previous auto-fill message
 
     if (selectedFiles && selectedFiles.length > 0) {
       // Validate Shapefile components
@@ -810,24 +812,66 @@ export default function Upload() {
 
         if (response.ok) {
           const data = await response.json()
+          console.log('Extracted geospatial data:', data)
           setGeospatialInfo(data)
 
           // Auto-fill metadata fields based on extracted information
-          if (data.title) {
-            setMetadata(prev => ({ ...prev, title: data.title }))
-          }
-          if (data.abstract) {
-            setMetadata(prev => ({ ...prev, abstract: data.abstract }))
-          }
-          if (data.featureCount) {
-            setMetadata(prev => ({ ...prev, purpose: `Dataset berisi ${data.featureCount} fitur geospasial` }))
-          }
-          if (data.coordinateSystem) {
-            setMetadata(prev => ({ ...prev, coordinateSystem: data.coordinateSystem }))
-          }
+          setMetadata(prev => ({
+            ...prev,
+            // Basic extracted fields - only fill if data exists
+            ...(data.inferredTitle && { title: data.inferredTitle }),
+            ...(data.inferredAbstract && { abstract: data.inferredAbstract }),
+            ...(data.featureCount && { purpose: `Dataset berisi ${data.featureCount.toLocaleString()} fitur geospasial` }),
+            ...(data.coordinateSystem && { referenceSystemIdentifier: data.coordinateSystem }),
+            ...(data.inferredExtent && { extent: data.inferredExtent }),
+
+            // Inferred metadata fields
+            ...(data.inferredTopicCategory && { topicCategory: data.inferredTopicCategory }),
+            ...(data.inferredDescriptiveKeywords && { descriptiveKeywords: data.inferredDescriptiveKeywords }),
+            ...(data.inferredAttributeDescription && { attributeDescription: data.inferredAttributeDescription }),
+            ...(data.inferredSpatialResolution && { spatialResolution: data.inferredSpatialResolution }),
+            ...(data.inferredResourceFormat && { resourceFormat: data.inferredResourceFormat }),
+
+            // Set spatial representation type based on geometry
+            spatialRepresentationType: data.geometryType ? (
+              data.geometryType.toLowerCase().includes('point') ? 'vector' :
+              data.geometryType.toLowerCase().includes('line') ? 'vector' :
+              data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
+              'vector' // default
+            ) : prev.spatialRepresentationType
+          }))
+
+          // Show auto-fill success message
+          console.log('Metadata after auto-fill:', {
+            title: data.inferredTitle,
+            abstract: data.inferredAbstract,
+            purpose: data.featureCount ? `Dataset berisi ${data.featureCount.toLocaleString()} fitur geospasial` : undefined,
+            referenceSystemIdentifier: data.coordinateSystem,
+            extent: data.inferredExtent,
+            topicCategory: data.inferredTopicCategory,
+            descriptiveKeywords: data.inferredDescriptiveKeywords,
+            attributeDescription: data.inferredAttributeDescription,
+            spatialResolution: data.inferredSpatialResolution,
+            resourceFormat: data.inferredResourceFormat,
+            spatialRepresentationType: data.geometryType ? (
+              data.geometryType.toLowerCase().includes('point') ? 'vector' :
+              data.geometryType.toLowerCase().includes('line') ? 'vector' :
+              data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
+              'vector'
+            ) : undefined
+          })
+          setAutoFillMessage('✅ Field metadata telah diisi otomatis! Klik "Tampilkan Field Manual Metadata" untuk melihat hasilnya.')
+          setTimeout(() => setAutoFillMessage(''), 5000) // Clear message after 5 seconds
+        } else {
+          const errorData = await response.json()
+          console.error('Extraction failed:', errorData)
+          setAutoFillMessage(`❌ Gagal mengekstrak informasi geospasial: ${errorData.error || 'Unknown error'}`)
+          setTimeout(() => setAutoFillMessage(''), 5000)
         }
       } catch (error) {
         console.error('Error extracting geospatial info:', error)
+        setAutoFillMessage('❌ Terjadi kesalahan saat ekstraksi. Coba lagi atau gunakan format GeoJSON.')
+        setTimeout(() => setAutoFillMessage(''), 5000)
       }
     }
   }
@@ -864,6 +908,7 @@ export default function Upload() {
     setUploading(true)
     setMessage('')
     setError(null)
+    setAutoFillMessage('')
 
     const formData = new FormData()
     Array.from(files).forEach(file => {
@@ -1051,6 +1096,13 @@ export default function Upload() {
                         Sistem akan otomatis mengekstrak dan memvalidasi komponen Shapefile
                       </p>
                     </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                      <p className="text-yellow-800 font-medium text-sm">⚠️ Persyaratan untuk Shapefile:</p>
+                      <p className="text-yellow-700 text-xs mt-1">
+                        Untuk ekstraksi otomatis metadata dari file Shapefile (.shp), sistem memerlukan GDAL/ogrinfo.
+                        Jika tidak terinstall, gunakan format GeoJSON untuk auto-fill metadata.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1125,36 +1177,94 @@ export default function Upload() {
               </div>
             )}
 
+            {autoFillMessage && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-green-800 font-medium">{autoFillMessage}</span>
+                </div>
+              </div>
+            )}
+
             {geospatialInfo && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-blue-800 mb-3">Informasi Geospasial (Otomatis):</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-blue-700">Jumlah Fitur:</span>
-                    <span className="ml-2 text-blue-600">{geospatialInfo.featureCount}</span>
+                <h4 className="text-sm font-semibold text-blue-800 mb-3">📊 Informasi Geospasial (Otomatis Extract):</h4>
+
+                {/* Basic Information */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                  <div className="bg-white p-3 rounded border">
+                    <span className="font-medium text-blue-700 block">Jumlah Fitur</span>
+                    <span className="text-blue-600 font-semibold">{geospatialInfo.featureCount?.toLocaleString()}</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Tipe Geometri:</span>
-                    <span className="ml-2 text-blue-600">{geospatialInfo.geometryType}</span>
+                  <div className="bg-white p-3 rounded border">
+                    <span className="font-medium text-blue-700 block">Tipe Geometri</span>
+                    <span className="text-blue-600 font-semibold">{geospatialInfo.geometryType}</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Sistem Koordinat:</span>
-                    <span className="ml-2 text-blue-600">{geospatialInfo.coordinateSystem}</span>
+                  <div className="bg-white p-3 rounded border">
+                    <span className="font-medium text-blue-700 block">Sistem Koordinat</span>
+                    <span className="text-blue-600 font-semibold">{geospatialInfo.coordinateSystem}</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Format File:</span>
-                    <span className="ml-2 text-blue-600">{geospatialInfo.dataFormat}</span>
+                  <div className="bg-white p-3 rounded border">
+                    <span className="font-medium text-blue-700 block">Format File</span>
+                    <span className="text-blue-600 font-semibold">{geospatialInfo.dataFormat}</span>
                   </div>
                 </div>
+
+                {/* Bounding Box */}
                 {geospatialInfo.boundingBox && (
-                  <div className="mt-3">
-                    <span className="font-medium text-blue-700">Bounding Box:</span>
-                    <div className="text-xs text-blue-600 mt-1">
-                      Min X: {geospatialInfo.boundingBox.minX}, Min Y: {geospatialInfo.boundingBox.minY}<br />
-                      Max X: {geospatialInfo.boundingBox.maxX}, Max Y: {geospatialInfo.boundingBox.maxY}
+                  <div className="bg-white p-3 rounded border mb-4">
+                    <span className="font-medium text-blue-700">🌐 Extent (Bounding Box):</span>
+                    <div className="text-xs text-blue-600 mt-1 font-mono">
+                      {geospatialInfo.inferredExtent || `${geospatialInfo.boundingBox.minX.toFixed(4)}, ${geospatialInfo.boundingBox.maxX.toFixed(4)}, ${geospatialInfo.boundingBox.minY.toFixed(4)}, ${geospatialInfo.boundingBox.maxY.toFixed(4)}`}
                     </div>
                   </div>
                 )}
+
+                {/* Inferred Metadata */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {geospatialInfo.inferredTitle && (
+                    <div className="bg-green-50 p-3 rounded border border-green-200">
+                      <span className="font-medium text-green-700 block">📝 Title (Suggested)</span>
+                      <span className="text-green-600 text-sm">{geospatialInfo.inferredTitle}</span>
+                    </div>
+                  )}
+                  {geospatialInfo.inferredTopicCategory && (
+                    <div className="bg-green-50 p-3 rounded border border-green-200">
+                      <span className="font-medium text-green-700 block">🏷️ Topic Category</span>
+                      <span className="text-green-600 text-sm">{geospatialInfo.inferredTopicCategory}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Attributes */}
+                {geospatialInfo.attributes && geospatialInfo.attributes.length > 0 && (
+                  <div className="bg-white p-3 rounded border mb-4">
+                    <span className="font-medium text-blue-700">📋 Schema Atribut ({geospatialInfo.attributes.length}):</span>
+                    <div className="text-xs text-blue-600 mt-2 max-h-32 overflow-y-auto">
+                      {geospatialInfo.attributes?.map((attr: { name: string; type: string }, index: number) => (
+                        <div key={index} className="font-mono">
+                          {attr.name}: {attr.type}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Keywords */}
+                {geospatialInfo.inferredDescriptiveKeywords && (
+                  <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                    <span className="font-medium text-yellow-700 block">🔍 Keywords (Suggested)</span>
+                    <span className="text-yellow-600 text-sm">{geospatialInfo.inferredDescriptiveKeywords}</span>
+                  </div>
+                )}
+
+                <div className="mt-3 text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                  ✅ Field metadata telah diisi otomatis berdasarkan analisis file geospasial
+                  <br />
+                  <strong>Fields yang diisi otomatis:</strong> Title, Abstract, Purpose, Reference System, Extent, Topic Category, Keywords, Attribute Description, Spatial Resolution, Resource Format, Spatial Representation Type
+                </div>
               </div>
             )}
 

@@ -780,6 +780,7 @@ export default function EditMetadata() {
     }
   }
 
+
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token')
@@ -1101,6 +1102,7 @@ export default function EditMetadata() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+
 
                   {/* Render fields based on active section */}
                   {activeSection === 'identificationInfo' && (

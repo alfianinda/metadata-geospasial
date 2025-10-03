@@ -818,6 +818,7 @@ export default function MetadataDetail() {
     setExpandedSections(newExpanded)
   }
 
+
   const handleDelete = async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -1047,6 +1048,7 @@ export default function MetadataDetail() {
                   })()}
                 </div>
               </div>
+
 
               {/* Metadata Info */}
               <div className="mb-6">
@@ -1327,7 +1329,7 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reference System Identifier
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.referenceSystemIdentifier || metadata.coordinateSystem || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.coordinateSystem || 'Not specified'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
