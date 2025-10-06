@@ -1,6 +1,6 @@
 # 🌍 Geospatial Metadata Generator
 
-Aplikasi web modern untuk menghasilkan metadata geospasial secara otomatis sesuai standar **SNI ISO 19115:2019** dan **ISO 19115/19139** untuk DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara.
+Aplikasi web modern untuk menghasilkan metadata geospasial secara otomatis sesuai standar **SNI ISO 19115:2019** dan **ISO 19115/19139**.
 
 ## ✨ Fitur Utama
 
@@ -813,21 +813,16 @@ Examples:
 ## 📞 Support
 
 ### Getting Help
-- 📧 **Email**: support@dkb.go.id
+- 📧 **Email**: ni.alfianinda@gmail.com
 - 💬 **Issues**: GitHub Issues
 - 📖 **Documentation**: This README and inline code comments
-
-### Community
-- 🌐 **Website**: https://dkb.go.id
-- 📱 **LinkedIn**: DKB Otorita Ibu Kota Nusantara
-- 🐦 **Twitter**: @DKBOIKN
 
 ## 📄 License
 
 **MIT License** - see [LICENSE](LICENSE) file for details
 
 ```
-Copyright (c) 2024 DKB Otorita Ibu Kota Nusantara
+Copyright (c) 2025 Nur Inna Alfianinda
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -844,8 +839,6 @@ copies or substantial portions of the Software.
 
 <div align="center">
 
-**Built with ❤️ for DKB Otorita Ibu Kota Nusantara**
-
-[🌐 Website](https://dkb.go.id) • [📧 Contact](mailto:info@dkb.go.id) • [🐛 Report Bug](https://github.com/dkb-oikn/geospatial-metadata-app/issues)
+**Built with ❤️**
 
 </div>
