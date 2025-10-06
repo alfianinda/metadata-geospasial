@@ -33,6 +33,13 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# configuration files (should not be deployed)
+conf-*
+
+# temporary files with sensitive data
+temp_db_url.txt
+temp_*
+
 # vercel
 .vercel
 
