@@ -365,6 +365,14 @@ const metadataEntities = [
         standard: 'ISO 19115 Optional'
       },
       {
+        id: 'onlineResource',
+        name: 'onlineResource',
+        description: 'Alamat web (URL) lengkap untuk mengakses dataset asli atau sumber data online. Ini adalah tautan langsung ke data yang dapat diakses oleh pengguna.',
+        required: false,
+        example: 'https://data.bps.go.id/dataset/peta-administrasi-indonesia-2024',
+        standard: 'ISO 19115 Optional'
+      },
+      {
         id: 'transferOptions',
         name: 'transferOptions',
         description: 'Cara-cara untuk mendapatkan data, seperti URL download, protokol akses, atau persyaratan khusus.',
@@ -1325,6 +1333,40 @@ export default function MetadataExamples() {
                             <li>Website: https://data.bps.go.id</li>
                           </ul>
                           <p><strong>Kenapa penting:</strong> Pengguna tahu ke mana harus menghubungi untuk masalah teknis distribusi</p>
+                        </div>
+                      )}
+                      {selectedFieldData.id === 'onlineResource' && (
+                        <div>
+                          <p><strong>Sumber Online Dataset</strong></p>
+                          <p>URL lengkap dan permanen untuk mengakses dataset asli. Ini adalah tautan langsung ke data yang dapat diakses oleh pengguna. Penting untuk:</p>
+                          <ul>
+                            <li><strong>Permanence:</strong> URL yang tidak berubah seiring waktu</li>
+                            <li><strong>Direct access:</strong> Pengguna bisa langsung mengakses data</li>
+                            <li><strong>Machine readable:</strong> Sistem bisa otomatis mengunduh data</li>
+                            <li><strong>Interoperability:</strong> Memungkinkan integrasi dengan sistem lain</li>
+                          </ul>
+                          <p><strong>Jenis URL yang baik:</strong></p>
+                          <ul>
+                            <li><strong>Portal data resmi:</strong> https://data.bps.go.id/dataset/peta-administrasi-indonesia-2024</li>
+                            <li><strong>Repository institusi:</strong> https://repository.bps.go.id/handle/123456789/12345</li>
+                            <li><strong>Persistent identifier:</strong> https://doi.org/10.1234/abcd-efgh</li>
+                            <li><strong>API endpoint:</strong> https://api.bps.go.id/geospatial/v1/boundaries</li>
+                          </ul>
+                          <p><strong>Ketika kosongkan field ini:</strong></p>
+                          <ul>
+                            <li>Data belum dipublikasikan online</li>
+                            <li>Data masih dalam tahap internal/proses</li>
+                            <li>Data hanya tersedia dalam format fisik</li>
+                            <li>Akses data memerlukan autentikasi khusus</li>
+                          </ul>
+                          <p><strong>Best practices:</strong></p>
+                          <ul>
+                            <li>Gunakan HTTPS untuk keamanan</li>
+                            <li>Pastikan URL aktif dan dapat diakses publik</li>
+                            <li>Lebih baik menggunakan DOI atau PURL untuk permanensi</li>
+                            <li>Sertakan dalam transferOptions jika ada multiple cara akses</li>
+                          </ul>
+                          <p><strong>Untuk data DKB:</strong> Biasanya mengarah ke portal data resmi atau repository institusi</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'transferOptions' && (

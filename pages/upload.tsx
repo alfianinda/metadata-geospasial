@@ -366,6 +366,14 @@ const metadataEntities = [
         standard: 'ISO 19115 Optional'
       },
       {
+        id: 'onlineResource',
+        name: 'Online Resource',
+        description: 'Alamat web lengkap untuk mengakses dataset secara online.',
+        required: false,
+        example: 'https://data.dkb.go.id/dataset/peta-administrasi-indonesia-2024',
+        standard: 'ISO 19115 Optional'
+      },
+      {
         id: 'transferOptions',
         name: 'transferOptions',
         description: 'Cara-cara untuk mendapatkan data, seperti URL download, protokol akses, atau persyaratan khusus.',
@@ -748,6 +756,31 @@ export default function Upload() {
       }
     }
 
+    // For Shapefile files, always show validation feedback
+    if (hasShp) {
+      if (hasShx && hasDbf) {
+        return {
+          isValid: true,
+          message: '✅ Shapefile lengkap terdeteksi (.shp, .shx, .dbf). Ekstraksi otomatis metadata akan dilakukan.'
+        }
+      } else if (hasShx) {
+        return {
+          isValid: true,
+          message: '⚠️ File .shx ditemukan tetapi file .dbf tidak ada. Shapefile akan diproses dengan keterbatasan atribut.'
+        }
+      } else if (hasDbf) {
+        return {
+          isValid: true,
+          message: '⚠️ File .dbf ditemukan tetapi file .shx tidak ada. Shapefile akan diproses dengan keterbatasan geometri.'
+        }
+      } else {
+        return {
+          isValid: true,
+          message: '⚠️ Hanya file .shp yang ditemukan. File .shx dan .dbf tidak ada. Shapefile akan diproses dengan keterbatasan.'
+        }
+      }
+    }
+
     return { isValid: true, message: '' }
   }
 
@@ -887,9 +920,12 @@ export default function Upload() {
           ) : prev.spatialRepresentationType
         }))
 
-        // Show success message
+        // Show success message with data completeness info
         const extractionType = isShapefile ? 'server-side (GDAL)' : 'server-side'
-        setAutoFillMessage(`✅ Field metadata telah diisi otomatis menggunakan ${extractionType} extraction! Klik "Tampilkan Field Manual Metadata" untuk melihat hasilnya.`)
+        const dataQuality = geospatialInfo?.dataFormat?.includes('No Features') ? ' (kualitas data terbatas)' :
+                           geospatialInfo?.dataFormat?.includes('Geometry Only') ? ' (geometri saja, tanpa atribut)' :
+                           geospatialInfo?.dataFormat?.includes('Error') ? ' (dengan kesalahan)' : ''
+        setAutoFillMessage(`✅ Field metadata telah diisi otomatis menggunakan ${extractionType} extraction${dataQuality}! Klik "Tampilkan Field Manual Metadata" untuk melihat hasilnya.`)
         setTimeout(() => setAutoFillMessage(''), 6000)
       } else {
         const errorData = await response.json()
@@ -943,11 +979,18 @@ export default function Upload() {
       }
 
       // Check if file format supports client-side extraction
-      const selectedFile = selectedFiles[0]
-      const selectedFileName = selectedFile.name.toLowerCase()
-      const isSupportedFormat = selectedFileName.endsWith('.shp') || selectedFileName.endsWith('.shx') || selectedFileName.endsWith('.dbf') ||
-                               selectedFileName.endsWith('.geojson') || selectedFileName.endsWith('.json') ||
-                               selectedFileName.endsWith('.zip') || selectedFileName.endsWith('.rar')
+      const fileNames = Array.from(selectedFiles).map(file => file.name.toLowerCase())
+      const hasShapefileComponents = fileNames.some(name =>
+        name.endsWith('.shp') || name.endsWith('.shx') || name.endsWith('.dbf') ||
+        name.endsWith('.prj') || name.endsWith('.cpg') || name.endsWith('.sbn') ||
+        name.endsWith('.sbx') || name.endsWith('.shp.xml') || name.endsWith('.qix') ||
+        name.endsWith('.fbn') || name.endsWith('.fbx') || name.endsWith('.ain') ||
+        name.endsWith('.aih')
+      )
+      const hasGeoJSON = fileNames.some(name => name.endsWith('.geojson') || name.endsWith('.json'))
+      const hasCompressed = fileNames.some(name => name.endsWith('.zip') || name.endsWith('.rar'))
+
+      const isSupportedFormat = hasShapefileComponents || hasGeoJSON || hasCompressed
 
       if (!isSupportedFormat) {
         setError('⚠️ Format file ini tidak didukung untuk ekstraksi otomatis. Auto-Extracted Information from File tidak akan muncul. Sistem akan mencoba ekstraksi server-side jika tersedia, atau Anda perlu mengisi metadata secara manual.')
@@ -2766,7 +2809,11 @@ export default function Upload() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Field Wajib Belum Lengkap</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {error?.includes('⚠️') || error?.includes('File') || error?.includes('Format') ?
+                    'Peringatan Validasi File' :
+                    'Field Wajib Belum Lengkap'}
+                </h3>
                 <button
                   onClick={() => setShowErrorModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -2778,42 +2825,64 @@ export default function Upload() {
               </div>
 
               <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Harap lengkapi semua field yang bertanda * :
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <ul className="text-sm text-red-800 space-y-2">
-                    {(() => {
-                      const requiredFields = [
-                        { value: metadata.title?.trim(), name: 'Judul' },
-                        { value: metadata.abstract?.trim(), name: 'Abstrak' },
-                        { value: metadata.status?.trim(), name: 'Status' },
-                        { value: metadata.extent?.trim(), name: 'Extent' },
-                        { value: metadata.contactName?.trim(), name: 'Nama Kontak' },
-                        { value: metadata.contactEmail?.trim(), name: 'Email Kontak' },
-                        { value: metadata.spatialRepresentationType?.trim(), name: 'Spatial Representation Type' },
-                        { value: metadata.referenceSystemIdentifier?.trim(), name: 'Reference System Identifier' },
-                        { value: metadata.scope?.trim(), name: 'Scope' }
-                      ]
-                      return requiredFields.filter(field => !field.value).map((field, index) => (
-                        <li key={index} className="flex items-center">
-                          <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                          </svg>
-                          {field.name}
-                        </li>
-                      ))
-                    })()}
-                  </ul>
-                </div>
+                {error?.includes('⚠️') || error?.includes('File') || error?.includes('Format') ? (
+                  // Shapefile validation warning
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <svg className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <div className="text-sm text-yellow-800">
+                        <p className="font-medium mb-1">Validasi Shapefile</p>
+                        <p>{error}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Required field validation
+                  <>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Harap lengkapi semua field yang bertanda * :
+                    </p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <ul className="text-sm text-red-800 space-y-2">
+                        {(() => {
+                          const requiredFields = [
+                            { value: metadata.title?.trim(), name: 'Judul' },
+                            { value: metadata.abstract?.trim(), name: 'Abstrak' },
+                            { value: metadata.status?.trim(), name: 'Status' },
+                            { value: metadata.extent?.trim(), name: 'Extent' },
+                            { value: metadata.contactName?.trim(), name: 'Nama Kontak' },
+                            { value: metadata.contactEmail?.trim(), name: 'Email Kontak' },
+                            { value: metadata.spatialRepresentationType?.trim(), name: 'Spatial Representation Type' },
+                            { value: metadata.referenceSystemIdentifier?.trim(), name: 'Reference System Identifier' },
+                            { value: metadata.scope?.trim(), name: 'Scope' }
+                          ]
+                          return requiredFields.filter(field => !field.value).map((field, index) => (
+                            <li key={index} className="flex items-center">
+                              <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              {field.name}
+                            </li>
+                          ))
+                        })()}
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowErrorModal(false)}
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition duration-200"
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                    error?.includes('⚠️') || error?.includes('File') || error?.includes('Format') ?
+                      'bg-yellow-600 text-white hover:bg-yellow-700' :
+                      'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
                 >
-                  Tutup
+                  {error?.includes('⚠️') || error?.includes('File') || error?.includes('Format') ? 'Lanjutkan' : 'Tutup'}
                 </button>
               </div>
             </div>

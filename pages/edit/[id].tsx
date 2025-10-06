@@ -465,6 +465,14 @@ export default function EditMetadata() {
           standard: 'ISO 19115 Optional'
         },
         {
+          id: 'onlineResource',
+          name: 'onlineResource',
+          description: 'Sumber online',
+          required: false,
+          example: 'URL sumber online',
+          standard: 'ISO 19115 Optional'
+        },
+        {
           id: 'transferOptions',
           name: 'transferOptions',
           description: 'Cara-cara untuk mendapatkan data, seperti URL download, protokol akses, atau persyaratan khusus.',

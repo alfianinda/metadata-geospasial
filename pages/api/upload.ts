@@ -6,6 +6,7 @@ import path from 'path'
 import fs from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { uploadRateLimit, validateRequestSize, validateFileContent, sanitizeInput, logSecurityEvent } from '@/lib/security'
 
 const upload = multer({
   dest: 'uploads/temp/',
@@ -174,8 +175,25 @@ Error details: ${libError}`
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Apply upload rate limiting
+  await new Promise<void>((resolve, reject) => {
+    uploadRateLimit(req as any, res as any, (err: any) => {
+      if (err) reject(err)
+      else resolve()
+    })
+  })
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' })
+  }
+
+  // Validate request size
+  if (!validateRequestSize(req.headers['content-length'])) {
+    logSecurityEvent('UPLOAD_FAILED_SIZE_LIMIT', {
+      size: req.headers['content-length'],
+      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    })
+    return res.status(413).json({ message: 'Request too large' })
   }
 
   try {
@@ -196,13 +214,47 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Parse metadata from form data first
     const formData = multerReq.body
-    let geospatialInfo = formData.geospatialInfo ? JSON.parse(formData.geospatialInfo) : null
+
+    // Sanitize form data inputs (exclude geospatialInfo as it's internal data)
+    const sanitizedFormData: any = {}
+    for (const [key, value] of Object.entries(formData)) {
+      if (key === 'geospatialInfo') {
+        // geospatialInfo is internal data from client-side extraction, don't sanitize
+        sanitizedFormData[key] = value
+      } else if (typeof value === 'string') {
+        sanitizedFormData[key] = sanitizeInput(value)
+      } else {
+        sanitizedFormData[key] = value
+      }
+    }
+
+    let geospatialInfo = sanitizedFormData.geospatialInfo ? JSON.parse(sanitizedFormData.geospatialInfo) : null
 
     // Process compressed files
     const processedFiles: MulterFile[] = []
     const compressedFiles: MulterFile[] = []
 
     for (const file of files) {
+      // Validate file content
+      try {
+        const fileBuffer = fs.readFileSync(file.path)
+        if (!validateFileContent(fileBuffer, file.mimetype, file.originalname)) {
+          logSecurityEvent('UPLOAD_FAILED_INVALID_CONTENT', {
+            filename: file.originalname,
+            mimetype: file.mimetype,
+            ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
+          })
+          return res.status(400).json({ message: `File ${file.originalname} has invalid content` })
+        }
+      } catch (error) {
+        logSecurityEvent('UPLOAD_FAILED_CONTENT_READ_ERROR', {
+          filename: file.originalname,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
+        })
+        return res.status(400).json({ message: `Unable to validate file ${file.originalname}` })
+      }
+
       if (isCompressedFile(file.originalname)) {
         // Store the original compressed file for download
         compressedFiles.push(file)
@@ -370,7 +422,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Generate UUID if fileIdentifier is empty
-    const fileIdentifier = formData.fileIdentifier?.trim() || `uuid:${require('crypto').randomUUID()}`
+    const fileIdentifier = sanitizedFormData.fileIdentifier?.trim() || `uuid:${require('crypto').randomUUID()}`
 
     // Create metadata record with all fields
     const metadata = await prisma.metadata.create({
