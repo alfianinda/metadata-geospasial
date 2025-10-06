@@ -15,9 +15,9 @@ const metadataEntities = [
       {
         id: 'fileIdentifier',
         name: 'fileIdentifier',
-        description: 'Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset BPS bisa menggunakan format BPS-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.',
+        description: 'Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset DKB bisa menggunakan format DKB-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.',
         required: false,
-        example: 'BPS-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc',
+        example: 'DKB-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -41,7 +41,7 @@ const metadataEntities = [
         name: 'parentIdentifier',
         description: 'Kode metadata induk jika dataset ini merupakan bagian dari seri data yang lebih besar. Kosongkan jika dataset ini berdiri sendiri.',
         required: false,
-        example: 'BPS-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri',
+        example: 'DKB-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -65,7 +65,7 @@ const metadataEntities = [
         name: 'contact',
         description: 'Informasi kontak orang atau organisasi yang bertanggung jawab atas metadata ini. Biasanya adalah pembuat atau pemelihara data.',
         required: true,
-        example: 'Nama: Ahmad Surya, Email: ahmad@bps.go.id, Organisasi: BPS',
+        example: 'Nama: Ahmad Surya, Email: ahmad@dkb.go.id, Organisasi: DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -169,7 +169,7 @@ const metadataEntities = [
         name: 'pointOfContact',
         description: 'Kontak utama untuk pertanyaan tentang dataset ini. Biasanya adalah ahli teknis atau koordinator data.',
         required: false,
-        example: 'Nama: Dr. Ahmad Surya, Email: ahmad.surya@bps.go.id, Jabatan: Koordinator GIS BPS',
+        example: 'Nama: Dr. Ahmad Surya, Email: ahmad.surya@dkb.go.id, Jabatan: Koordinator GIS DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -329,7 +329,7 @@ const metadataEntities = [
         name: 'attributeDescription',
         description: 'Penjelasan detail tentang atribut/kolom data, tipe data, dan makna dari setiap atribut.',
         required: false,
-        example: 'provinsi: string - nama provinsi, kode_prov: string - kode BPS provinsi, luas_km2: number - luas wilayah dalam km²',
+        example: 'provinsi: string - nama provinsi, kode_prov: string - kode DKB provinsi, luas_km2: number - luas wilayah dalam km²',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -361,7 +361,7 @@ const metadataEntities = [
         name: 'distributor',
         description: 'Informasi tentang pihak yang mendistribusikan data, termasuk kontak dan tanggung jawab.',
         required: false,
-        example: 'Badan Pusat Statistik (BPS), Email: data@bps.go.id, Telepon: 021-3843140',
+        example: 'DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara, Email: data@dkb.go.id, Telepon: 021-3843140',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -401,7 +401,7 @@ const metadataEntities = [
         name: 'accuracy',
         description: 'Tingkat akurasi posisional dan atribut data. Sertakan unit pengukuran dan metode validasi.',
         required: false,
-        example: 'Akurasi posisional: ±2.5 meter pada skala 1:25.000, akurasi atribut: 95% sesuai dengan data BPS',
+        example: 'Akurasi posisional: ±2.5 meter pada skala 1:25.000, akurasi atribut: 95% sesuai dengan data DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -635,7 +635,7 @@ export default function MetadataExamples() {
                           <p><strong>Bagaimana menentukan identifier?</strong></p>
                           <ul>
                             <li><strong>UUID (Universally Unique Identifier):</strong> Sistem akan generate otomatis jika dikosongkan. Contoh: uuid:12345678-1234-1234-1234-123456789abc</li>
-                            <li><strong>Kode Organisasi:</strong> Gunakan format seperti BPS-2024-001, BIG-2024-Map-001, dll.</li>
+                            <li><strong>Kode Organisasi:</strong> Gunakan format seperti DKB-2024-001, dll.</li>
                             <li><strong>DOI (Digital Object Identifier):</strong> Jika dataset memiliki DOI resmi</li>
                           </ul>
                           <p><strong>Kapan menggunakan UUID vs Kode Organisasi?</strong></p>
@@ -755,7 +755,7 @@ export default function MetadataExamples() {
                             <li><strong>planned:</strong> Masih dalam perencanaan, belum ada data</li>
                             <li><strong>deprecated:</strong> Dataset sudah tidak direkomendasikan, ada versi terbaru</li>
                           </ul>
-                          <p><strong>Untuk data BPS/BIG:</strong> Biasanya "completed" setelah melalui proses validasi.</p>
+                          <p><strong>Untuk data DKB:</strong> Biasanya "completed" setelah melalui proses validasi.</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'topicCategory' && (
@@ -828,7 +828,7 @@ export default function MetadataExamples() {
                             <li><strong>EPSG:23830-23893:</strong> TM3 zona Indonesia</li>
                           </ul>
                           <p><strong>Untuk web GIS:</strong> Selalu gunakan EPSG:4326</p>
-                          <p><strong>Untuk kartografi:</strong> Gunakan sistem proyeksi sesuai standar BIG/BPS</p>
+                          <p><strong>Untuk kartografi:</strong> Gunakan sistem proyeksi sesuai standar DKB</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'distributionFormat' && (
@@ -851,7 +851,7 @@ export default function MetadataExamples() {
                             <li><strong>feature:</strong> Kualitas bervariasi per fitur</li>
                             <li><strong>attribute:</strong> Kualitas bervariasi per atribut</li>
                           </ul>
-                          <p><strong>Untuk data BPS/BIG:</strong> Biasanya "dataset" karena kualitas seragam.</p>
+                          <p><strong>Untuk data DKB:</strong> Biasanya "dataset" karena kualitas seragam.</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'lineage' && (
@@ -886,7 +886,7 @@ export default function MetadataExamples() {
                             <li><strong>Creative Commons:</strong> CC BY, CC BY-SA, dll.</li>
                             <li><strong>Lisensi terbuka:</strong> BSD, MIT</li>
                             <li><strong>Lisensi terbatas:</strong> Untuk penggunaan internal</li>
-                            <li><strong>Hak cipta:</strong> © BPS 2024</li>
+                            <li><strong>Hak cipta:</strong> © DKB Otorita Ibu Kota Nusantara 2024</li>
                           </ul>
                           <p><strong>Untuk data pemerintah Indonesia:</strong> Biasanya menggunakan CC BY atau lisensi terbuka.</p>
                         </div>
@@ -902,7 +902,7 @@ export default function MetadataExamples() {
                           </ul>
                           <p><strong>Format yang benar:</strong> YYYY-MM-DD (contoh: 2024-01-15)</p>
                           <p><strong>Kapan diupdate:</strong> Setiap kali ada perubahan signifikan pada dataset atau metadata</p>
-                          <p><strong>Untuk data BPS/BIG:</strong> Gunakan tanggal ketika metadata disahkan atau dipublikasikan</p>
+                          <p><strong>Untuk data DKB:</strong> Gunakan tanggal ketika metadata disahkan atau dipublikasikan</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'metadataStandardName' && (
@@ -978,7 +978,7 @@ export default function MetadataExamples() {
                           <ul>
                             <li>Jika hierarchyLevel = "dataset": "Dataset Peta Administrasi Kabupaten"</li>
                             <li>Jika hierarchyLevel = "series": "Seri Data Sensus Penduduk Indonesia"</li>
-                            <li>Jika hierarchyLevel = "service": "Layanan Web GIS BPS"</li>
+                            <li>Jika hierarchyLevel = "service": "Layanan Web GIS DKB Otorita Ibu Kota Nusantara"</li>
                           </ul>
                           <p><strong>Tujuan:</strong> Memberikan konteks yang lebih jelas tentang jenis data</p>
                           <p><strong>Tips penulisan:</strong> Gunakan istilah yang spesifik dan deskriptif, bukan kata-kata umum</p>
@@ -1001,7 +1001,7 @@ export default function MetadataExamples() {
                             <li>Institusi/organisasi</li>
                             <li>Nomor telepon (opsional)</li>
                           </ul>
-                          <p><strong>Contoh yang baik:</strong> "Dr. Ahmad Surya, ahmad.surya@bps.go.id, Koordinator GIS BPS"</p>
+                          <p><strong>Contoh yang baik:</strong> "Dr. Ahmad Surya, ahmad.surya@dkb.go.id, Koordinator GIS DKB Otorita Ibu Kota Nusantara"</p>
                           <p><strong>Bukan contoh yang baik:</strong> "Admin, info@bps.go.id, BPS" (terlalu umum)</p>
                         </div>
                       )}
@@ -1137,7 +1137,7 @@ export default function MetadataExamples() {
                           <p>Aturan hukum dan praktis yang mengatur penggunaan dataset. Melindungi hak pemilik data:</p>
                           <ul>
                             <li><strong>Lisensi:</strong> Creative Commons, BSD, MIT, GPL</li>
-                            <li><strong>Hak cipta:</strong> © BPS 2024, All rights reserved</li>
+                            <li><strong>Hak cipta:</strong> © DKB Otorita Ibu Kota Nusantara 2024, All rights reserved</li>
                             <li><strong>Pembatasan akses:</strong> Internal use only, research only</li>
                             <li><strong>Persyaratan atribusi:</strong> Harus mencantumkan sumber</li>
                           </ul>
@@ -1317,10 +1317,10 @@ export default function MetadataExamples() {
                             <li>Website resmi</li>
                             <li>Jam operasional</li>
                           </ul>
-                          <p><strong>Contoh untuk BPS:</strong></p>
+                          <p><strong>Contoh untuk DKB:</strong></p>
                           <ul>
-                            <li>Nama: Badan Pusat Statistik</li>
-                            <li>Email: data@bps.go.id</li>
+                            <li>Nama: DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara</li>
+                            <li>Email: data@dkb.go.id</li>
                             <li>Telepon: 021-3843140</li>
                             <li>Website: https://data.bps.go.id</li>
                           </ul>
@@ -1405,7 +1405,7 @@ export default function MetadataExamples() {
                             <li>Tanggal update lebih lama dari tanggal pembuatan</li>
                           </ul>
                           <p><strong>Cara validasi:</strong> Automated checks, manual review, cross-validation</p>
-                          <p><strong>Untuk data BPS:</strong> Biasanya &gt;95% konsisten setelah quality control</p>
+                          <p><strong>Untuk data DKB:</strong> Biasanya &gt;95% konsisten setelah quality control</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'accessConstraints' && (
@@ -1432,7 +1432,7 @@ export default function MetadataExamples() {
                             <li><strong>Confidential:</strong> Data intelijen, militer</li>
                           </ul>
                           <p><strong>Legal basis:</strong> UU No. 14 Tahun 2008 tentang Keterbukaan Informasi Publik</p>
-                          <p><strong>Untuk data BPS:</strong> Kebanyakan "public" kecuali data yang dilindungi</p>
+                          <p><strong>Untuk data DKB:</strong> Kebanyakan "public" kecuali data yang dilindungi</p>
                         </div>
                       )}
                       {selectedFieldData.id === 'otherConstraints' && (
@@ -1449,8 +1449,8 @@ export default function MetadataExamples() {
                           <p><strong>Contoh ketentuan:</strong></p>
                           <ul>
                             <li>"Data hanya boleh digunakan untuk tujuan pendidikan dan penelitian"</li>
-                            <li>"Penggunaan komersial memerlukan izin tertulis dari BPS"</li>
-                            <li>"Harus mencantumkan sumber: Sumber - BPS Indonesia"</li>
+                            <li>"Penggunaan komersial memerlukan izin tertulis dari DKB Otorita Ibu Kota Nusantara"</li>
+                            <li>"Harus mencantumkan sumber: Sumber - DKB Otorita Ibu Kota Nusantara"</li>
                             <li>"Tidak boleh digunakan untuk kampanye politik"</li>
                           </ul>
                           <p><strong>Kenapa terpisah:</strong> Ketentuan ini lebih spesifik dari lisensi umum</p>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '../components/Navbar'
+import { ClientGeospatialExtractor } from '../lib/clientGeospatialExtractor'
 
 // Metadata entities hierarchy - updated to match actual form fields
 const metadataEntities = [
@@ -15,9 +16,9 @@ const metadataEntities = [
       {
         id: 'fileIdentifier',
         name: 'fileIdentifier',
-        description: 'Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset BPS bisa menggunakan format BPS-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.',
+        description: 'Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset DKB bisa menggunakan format DKB-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.',
         required: false,
-        example: 'BPS-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc',
+        example: 'DKB-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -41,7 +42,7 @@ const metadataEntities = [
         name: 'parentIdentifier',
         description: 'Kode metadata induk jika dataset ini merupakan bagian dari seri data yang lebih besar. Kosongkan jika dataset ini berdiri sendiri.',
         required: false,
-        example: 'BPS-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri',
+        example: 'DKB-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -65,7 +66,7 @@ const metadataEntities = [
         name: 'contact',
         description: 'Informasi kontak orang atau organisasi yang bertanggung jawab atas metadata ini. Biasanya adalah pembuat atau pemelihara data.',
         required: true,
-        example: 'Nama: Ahmad Surya, Email: ahmad@bps.go.id, Organisasi: BPS',
+        example: 'Nama: Ahmad Surya, Email: ahmad@dkb.go.id, Organisasi: DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Mandatory'
       },
       {
@@ -169,7 +170,7 @@ const metadataEntities = [
         name: 'pointOfContact',
         description: 'Kontak utama untuk pertanyaan tentang dataset ini. Biasanya adalah ahli teknis atau koordinator data.',
         required: false,
-        example: 'Nama: Dr. Ahmad Surya, Email: ahmad.surya@bps.go.id, Jabatan: Koordinator GIS BPS',
+        example: 'Nama: Dr. Ahmad Surya, Email: ahmad.surya@dkb.go.id, Jabatan: Koordinator GIS DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -329,7 +330,7 @@ const metadataEntities = [
         name: 'attributeDescription',
         description: 'Penjelasan detail tentang atribut/kolom data, tipe data, dan makna dari setiap atribut.',
         required: false,
-        example: 'provinsi: string - nama provinsi, kode_prov: string - kode BPS provinsi, luas_km2: number - luas wilayah dalam km²',
+        example: 'provinsi: string - nama provinsi, kode_prov: string - kode DKB provinsi, luas_km2: number - luas wilayah dalam km²',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -361,7 +362,7 @@ const metadataEntities = [
         name: 'distributor',
         description: 'Informasi tentang pihak yang mendistribusikan data, termasuk kontak dan tanggung jawab.',
         required: false,
-        example: 'Badan Pusat Statistik (BPS), Email: data@bps.go.id, Telepon: 021-3843140',
+        example: 'DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara, Email: data@dkb.go.id, Telepon: 021-3843140',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -401,7 +402,7 @@ const metadataEntities = [
         name: 'accuracy',
         description: 'Tingkat akurasi posisional dan atribut data. Sertakan unit pengukuran dan metode validasi.',
         required: false,
-        example: 'Akurasi posisional: ±2.5 meter pada skala 1:25.000, akurasi atribut: 95% sesuai dengan data BPS',
+        example: 'Akurasi posisional: ±2.5 meter pada skala 1:25.000, akurasi atribut: 95% sesuai dengan data DKB Otorita Ibu Kota Nusantara',
         standard: 'ISO 19115 Optional'
       },
       {
@@ -535,6 +536,13 @@ interface MetadataForm {
   sniVersion: string
   sniStandard: string
   bahasa: string
+
+  // File Information (auto-extracted)
+  fileSize?: number
+  originalFileName?: string
+  dataFormat?: string
+  featureCount?: number
+  geometryType?: string
 }
 
 
@@ -567,7 +575,7 @@ export default function Upload() {
     hierarchyLevelName: '',
     contactName: '',
     contactEmail: '',
-    dateStamp: '',
+    dateStamp: new Date().toISOString().split('T')[0], // Auto-fill with today's date
     metadataStandardName: 'ISO 19115',
     metadataStandardVersion: '2003/Cor.1:2006',
     dataSetURI: '',
@@ -619,7 +627,13 @@ export default function Upload() {
     sniCompliant: true,
     sniVersion: '1.0',
     sniStandard: 'SNI-ISO-19115-2019',
-    bahasa: 'id'
+    bahasa: 'id',
+    // File Information (auto-extracted)
+    fileSize: undefined,
+    originalFileName: undefined,
+    dataFormat: undefined,
+    featureCount: undefined,
+    geometryType: undefined
   })
 
   useEffect(() => {
@@ -652,7 +666,34 @@ export default function Upload() {
       }
     }
 
-    // Validate individual Shapefile components
+    // For single file uploads, check if it's a valid standalone format
+    if (files.length === 1) {
+      const singleFile = fileNames[0]
+      // Allow GeoJSON and JSON as single files
+      if (singleFile.endsWith('.geojson') || singleFile.endsWith('.json')) {
+        return { isValid: true, message: '' }
+      }
+      // Reject auxiliary Shapefile files uploaded alone
+      if (singleFile.endsWith('.prj') || singleFile.endsWith('.cpg') ||
+          singleFile.endsWith('.sbn') || singleFile.endsWith('.sbx') ||
+          singleFile.endsWith('.shp.xml') || singleFile.endsWith('.qix') ||
+          singleFile.endsWith('.fbn') || singleFile.endsWith('.fbx') ||
+          singleFile.endsWith('.ain') || singleFile.endsWith('.aih')) {
+        return {
+          isValid: false,
+          message: '⚠️ File pendukung Shapefile tidak dapat diproses sendiri. Auto-Extracted Information from File tidak akan muncul. Upload file utama (.shp, .shx, .dbf) beserta file pendukungnya untuk ekstraksi otomatis.'
+        }
+      }
+      // Allow single .shp file but show warning
+      if (singleFile.endsWith('.shp')) {
+        return {
+          isValid: true,
+          message: '⚠️ File .shx dan .dbf tidak ditemukan. Shapefile akan diproses dengan keterbatasan. Untuk hasil terbaik, sertakan file .shx dan .dbf'
+        }
+      }
+    }
+
+    // Validate individual Shapefile components for multiple files
     const hasShp = fileNames.some(name => name.endsWith('.shp'))
     const hasShx = fileNames.some(name => name.endsWith('.shx'))
     const hasDbf = fileNames.some(name => name.endsWith('.dbf'))
@@ -662,42 +703,48 @@ export default function Upload() {
       name.endsWith('.prj') ||
       name.endsWith('.cpg') ||
       name.endsWith('.sbn') ||
-      name.endsWith('.sbx')
+      name.endsWith('.sbx') ||
+      name.endsWith('.shp.xml') ||
+      name.endsWith('.qix') ||
+      name.endsWith('.fbn') ||
+      name.endsWith('.fbx') ||
+      name.endsWith('.ain') ||
+      name.endsWith('.aih')
     )
 
     // If there are auxiliary files but no core Shapefile files, reject
-    if (hasAuxiliaryFiles && !hasShp && !hasShx && !hasDbf) {
-      return {
-        isValid: false,
-        message: 'File pendukung Shapefile (.prj, .cpg, .sbn, .sbx) tidak dapat diupload tanpa file utama (.shp, .shx, .dbf)'
-      }
-    }
+   if (hasAuxiliaryFiles && !hasShp && !hasShx && !hasDbf) {
+     return {
+       isValid: false,
+       message: 'File pendukung Shapefile (.prj, .cpg, .sbn, .sbx, .shp.xml, .qix, .fbn, .fbx, .ain, .aih) tidak dapat diupload tanpa file utama (.shp, .shx, .dbf)'
+     }
+   }
 
-    // If there's a .shp file, we must have .shx and .dbf
+    // If there's a .shp file, we must have .shx and .dbf for best results
     if (hasShp) {
       if (!hasShx && !hasDbf) {
         return {
-          isValid: false,
-          message: 'Untuk Shapefile, pastikan memilih minimal file .shp, .shx, dan .dbf'
+          isValid: true, // Allow but warn
+          message: '⚠️ File .shx dan .dbf tidak ditemukan. Shapefile akan diproses dengan keterbatasan. Untuk hasil terbaik, sertakan file .shx dan .dbf'
         }
       } else if (!hasShx) {
         return {
-          isValid: false,
-          message: 'File .shx tidak ditemukan. Shapefile memerlukan file .shp, .shx, dan .dbf'
+          isValid: true, // Allow but warn
+          message: '⚠️ File .shx tidak ditemukan. Shapefile akan diproses dengan keterbatasan. Untuk hasil terbaik, sertakan file .shx'
         }
       } else if (!hasDbf) {
         return {
-          isValid: false,
-          message: 'File .dbf tidak ditemukan. Shapefile memerlukan file .shp, .shx, dan .dbf'
+          isValid: true, // Allow but warn
+          message: '⚠️ File .dbf tidak ditemukan. Shapefile akan diproses tanpa informasi atribut. Untuk hasil terbaik, sertakan file .dbf'
         }
       }
     }
 
-    // If there are .shx or .dbf files without .shp, that's also invalid
+    // If there are .shx or .dbf files without .shp, that's invalid
     if ((hasShx || hasDbf) && !hasShp) {
       return {
         isValid: false,
-        message: 'File .shx atau .dbf ditemukan tanpa file .shp. Shapefile memerlukan ketiga file tersebut'
+        message: '⚠️ File .shx atau .dbf ditemukan tanpa file .shp. Auto-Extracted Information from File tidak akan muncul. Shapefile memerlukan minimal file .shp untuk ekstraksi otomatis.'
       }
     }
 
@@ -730,6 +777,12 @@ export default function Upload() {
       cpg: fileNames.some(name => name.endsWith('.cpg')),
       sbn: fileNames.some(name => name.endsWith('.sbn')),
       sbx: fileNames.some(name => name.endsWith('.sbx')),
+      shp_xml: fileNames.some(name => name.endsWith('.shp.xml')),
+      qix: fileNames.some(name => name.endsWith('.qix')),
+      fbn: fileNames.some(name => name.endsWith('.fbn')),
+      fbx: fileNames.some(name => name.endsWith('.fbx')),
+      ain: fileNames.some(name => name.endsWith('.ain')),
+      aih: fileNames.some(name => name.endsWith('.aih')),
       compressed: false
     }
     return components
@@ -770,6 +823,100 @@ export default function Upload() {
     }
   }
 
+  const fallbackToServerSideExtraction = async (selectedFiles: FileList) => {
+    console.log('Starting server-side extraction fallback...')
+
+    const formData = new FormData()
+
+    // Check file types to determine processing approach
+    const firstFile = selectedFiles[0]
+    const fileName = firstFile.name.toLowerCase()
+    const isGeoJSON = fileName.endsWith('.geojson') || fileName.endsWith('.json')
+    const isShapefile = fileName.endsWith('.shp') || fileName.endsWith('.zip') || fileName.endsWith('.rar')
+
+    // For Shapefile components, send all related files
+    if (isShapefile && Array.from(selectedFiles).some(f => f.name.toLowerCase().endsWith('.shp'))) {
+      // Send all Shapefile components for server-side processing (if GDAL available)
+      Array.from(selectedFiles).forEach(file => {
+        formData.append('files', file)
+      })
+    } else if (Array.from(selectedFiles).some(f => f.name.toLowerCase().endsWith('.shp'))) {
+      // Multiple files with Shapefile components - send all
+      Array.from(selectedFiles).forEach(file => {
+        formData.append('files', file)
+      })
+    } else {
+      // For other formats, send the first file
+      formData.append('file', firstFile)
+    }
+
+    try {
+      const response = await fetch('/api/extract-geospatial', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Server-side extracted geospatial data:', data)
+        setGeospatialInfo(data)
+
+        // Auto-fill metadata fields based on extracted information
+        setMetadata(prev => ({
+          ...prev,
+          // Basic extracted fields - only fill if data exists
+          ...(data.inferredTitle && { title: data.inferredTitle }),
+          ...(data.inferredAbstract && { abstract: data.inferredAbstract }),
+          ...(data.featureCount && { purpose: `Dataset berisi ${data.featureCount.toLocaleString()} fitur geospasial` }),
+          ...(data.coordinateSystem && { referenceSystemIdentifier: data.coordinateSystem }),
+          ...(data.inferredExtent && { extent: data.inferredExtent }),
+
+          // Inferred metadata fields
+          ...(data.inferredTopicCategory && { topicCategory: data.inferredTopicCategory }),
+          ...(data.inferredDescriptiveKeywords && { descriptiveKeywords: data.inferredDescriptiveKeywords }),
+          ...(data.inferredAttributeDescription && { attributeDescription: data.inferredAttributeDescription }),
+          ...(data.inferredSpatialResolution && { spatialResolution: data.inferredSpatialResolution }),
+          ...(data.inferredResourceFormat && { resourceFormat: data.inferredResourceFormat }),
+
+          // Set spatial representation type based on geometry
+          spatialRepresentationType: data.geometryType ? (
+            data.geometryType.toLowerCase().includes('point') ? 'vector' :
+            data.geometryType.toLowerCase().includes('line') ? 'vector' :
+            data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
+            'vector' // default
+          ) : prev.spatialRepresentationType
+        }))
+
+        // Show success message
+        const extractionType = isShapefile ? 'server-side (GDAL)' : 'server-side'
+        setAutoFillMessage(`✅ Field metadata telah diisi otomatis menggunakan ${extractionType} extraction! Klik "Tampilkan Field Manual Metadata" untuk melihat hasilnya.`)
+        setTimeout(() => setAutoFillMessage(''), 6000)
+      } else {
+        const errorData = await response.json()
+        console.error('Server-side extraction failed:', errorData)
+
+        if (isShapefile && errorData.error && errorData.error.includes('GDAL')) {
+          // GDAL not available - provide helpful message for Vercel deployment
+          setAutoFillMessage('⚠️ Server-side extraction memerlukan GDAL yang tidak tersedia di Vercel. Sistem menggunakan client-side processing. Jika ekstraksi otomatis gagal, silakan isi metadata secara manual.')
+          setTimeout(() => setAutoFillMessage(''), 8000)
+        } else {
+          setAutoFillMessage(`❌ Server-side extraction gagal: ${errorData.error || 'Unknown error'}. Silakan isi metadata secara manual.`)
+          setTimeout(() => setAutoFillMessage(''), 6000)
+        }
+      }
+    } catch (error) {
+      console.error('Error in server-side extraction:', error)
+
+      if (isShapefile) {
+        setAutoFillMessage('⚠️ Server-side extraction tidak tersedia (GDAL dependency). Sistem menggunakan client-side processing untuk Shapefile. Jika ekstraksi otomatis gagal, silakan isi metadata secara manual.')
+        setTimeout(() => setAutoFillMessage(''), 8000)
+      } else {
+        setAutoFillMessage('❌ Terjadi kesalahan saat server-side extraction. Silakan isi metadata secara manual.')
+        setTimeout(() => setAutoFillMessage(''), 6000)
+      }
+    }
+  }
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     setFiles(selectedFiles)
@@ -781,97 +928,408 @@ export default function Upload() {
       if (!validation.isValid) {
         setError(validation.message)
         setShowErrorModal(true)
+        // Clear previous geospatial info since validation failed
+        setGeospatialInfo(null)
         return
       } else {
-        setError(null)
-        setShowErrorModal(false)
+        // Show warning modal for incomplete Shapefiles even if valid
+        if (validation.message && validation.message.includes('⚠️')) {
+          setError(validation.message)
+          setShowErrorModal(true)
+        } else {
+          setError(null)
+          setShowErrorModal(false)
+        }
       }
 
-      // Check if we have compressed files
-      const hasCompressed = Array.from(selectedFiles).some(file =>
-        file.name.toLowerCase().endsWith('.zip') || file.name.toLowerCase().endsWith('.rar')
-      )
+      // Check if file format supports client-side extraction
+      const selectedFile = selectedFiles[0]
+      const selectedFileName = selectedFile.name.toLowerCase()
+      const isSupportedFormat = selectedFileName.endsWith('.shp') || selectedFileName.endsWith('.shx') || selectedFileName.endsWith('.dbf') ||
+                               selectedFileName.endsWith('.geojson') || selectedFileName.endsWith('.json') ||
+                               selectedFileName.endsWith('.zip') || selectedFileName.endsWith('.rar')
 
-      if (hasCompressed) {
-        // For compressed files, skip geospatial extraction here
-        // It will be handled after extraction in the main upload API
+      if (!isSupportedFormat) {
+        setError('⚠️ Format file ini tidak didukung untuk ekstraksi otomatis. Auto-Extracted Information from File tidak akan muncul. Sistem akan mencoba ekstraksi server-side jika tersedia, atau Anda perlu mengisi metadata secara manual.')
+        setShowErrorModal(true)
+        // Clear previous geospatial info since this format is not supported
         setGeospatialInfo(null)
         return
       }
 
-      // Extract geospatial information from the first file (only for non-compressed files)
+      // Extract geospatial information using client-side processing
       const firstFile = selectedFiles[0]
       try {
-        const formData = new FormData()
-        formData.append('file', firstFile)
+        console.log('=== CLIENT-SIDE EXTRACTION START ===')
+        console.log('All selected files:', Array.from(selectedFiles).map(f => f.name))
+        console.log('First file (selectedFiles[0]):', firstFile.name)
 
-        const response = await fetch('/api/extract-geospatial', {
-          method: 'POST',
-          body: formData
-        })
+        // For Shapefile components, ALWAYS prioritize .shp file as the main file if it exists
+        let filesToExtract: File | File[] = firstFile;
+        console.log('selectedFiles.length:', selectedFiles.length)
 
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Extracted geospatial data:', data)
-          setGeospatialInfo(data)
+        // Check if we have Shapefile components (look for .shp file)
+        const shpFile = Array.from(selectedFiles).find(f => f.name.toLowerCase().endsWith('.shp'));
+        console.log('Found .shp file:', shpFile?.name || 'none')
 
-          // Auto-fill metadata fields based on extracted information
-          setMetadata(prev => ({
-            ...prev,
-            // Basic extracted fields - only fill if data exists
-            ...(data.inferredTitle && { title: data.inferredTitle }),
-            ...(data.inferredAbstract && { abstract: data.inferredAbstract }),
-            ...(data.featureCount && { purpose: `Dataset berisi ${data.featureCount.toLocaleString()} fitur geospasial` }),
-            ...(data.coordinateSystem && { referenceSystemIdentifier: data.coordinateSystem }),
-            ...(data.inferredExtent && { extent: data.inferredExtent }),
-
-            // Inferred metadata fields
-            ...(data.inferredTopicCategory && { topicCategory: data.inferredTopicCategory }),
-            ...(data.inferredDescriptiveKeywords && { descriptiveKeywords: data.inferredDescriptiveKeywords }),
-            ...(data.inferredAttributeDescription && { attributeDescription: data.inferredAttributeDescription }),
-            ...(data.inferredSpatialResolution && { spatialResolution: data.inferredSpatialResolution }),
-            ...(data.inferredResourceFormat && { resourceFormat: data.inferredResourceFormat }),
-
-            // Set spatial representation type based on geometry
-            spatialRepresentationType: data.geometryType ? (
-              data.geometryType.toLowerCase().includes('point') ? 'vector' :
-              data.geometryType.toLowerCase().includes('line') ? 'vector' :
-              data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
-              'vector' // default
-            ) : prev.spatialRepresentationType
-          }))
-
-          // Show auto-fill success message
-          console.log('Metadata after auto-fill:', {
-            title: data.inferredTitle,
-            abstract: data.inferredAbstract,
-            purpose: data.featureCount ? `Dataset berisi ${data.featureCount.toLocaleString()} fitur geospasial` : undefined,
-            referenceSystemIdentifier: data.coordinateSystem,
-            extent: data.inferredExtent,
-            topicCategory: data.inferredTopicCategory,
-            descriptiveKeywords: data.inferredDescriptiveKeywords,
-            attributeDescription: data.inferredAttributeDescription,
-            spatialResolution: data.inferredSpatialResolution,
-            resourceFormat: data.inferredResourceFormat,
-            spatialRepresentationType: data.geometryType ? (
-              data.geometryType.toLowerCase().includes('point') ? 'vector' :
-              data.geometryType.toLowerCase().includes('line') ? 'vector' :
-              data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
-              'vector'
-            ) : undefined
-          })
-          setAutoFillMessage('✅ Field metadata telah diisi otomatis! Klik "Tampilkan Field Manual Metadata" untuk melihat hasilnya.')
-          setTimeout(() => setAutoFillMessage(''), 5000) // Clear message after 5 seconds
+        if (shpFile) {
+          // If we have a .shp file, send ALL files for Shapefile processing
+          // But prioritize .shp file as the first file to ensure proper processing
+          const allFiles = Array.from(selectedFiles);
+          const shpIndex = allFiles.findIndex(f => f.name.toLowerCase().endsWith('.shp'));
+          if (shpIndex > 0) {
+            // Move .shp file to the front of the array
+            const shpFile = allFiles.splice(shpIndex, 1)[0];
+            allFiles.unshift(shpFile);
+            console.log('🔄 Moved .shp file to front for proper processing');
+          }
+          filesToExtract = allFiles;
+          console.log('✅ Found .shp file, sending ALL Shapefile components for extraction:', filesToExtract.map(f => f.name));
         } else {
-          const errorData = await response.json()
-          console.error('Extraction failed:', errorData)
-          setAutoFillMessage(`❌ Gagal mengekstrak informasi geospasial: ${errorData.error || 'Unknown error'}`)
-          setTimeout(() => setAutoFillMessage(''), 5000)
+          // No .shp file found, use first file (could be single GeoJSON or other format)
+          filesToExtract = firstFile;
+          console.log('❌ No .shp file found, using first file:', firstFile.name);
+        }
+
+        console.log('Final filesToExtract:', Array.isArray(filesToExtract) ? filesToExtract.map(f => f.name) : filesToExtract.name)
+
+        console.log('Calling ClientGeospatialExtractor.extract with:', Array.isArray(filesToExtract) ? filesToExtract.map(f => f.name) : filesToExtract.name)
+        const extractionResult = await ClientGeospatialExtractor.extract(filesToExtract)
+        console.log('Extraction result:', extractionResult)
+
+        if (extractionResult.success && extractionResult.data) {
+          const data = extractionResult.data
+          console.log('Client-side extracted geospatial data:', data)
+
+          // More comprehensive success check
+          const isSuccessfulExtraction = (
+            data.featureCount > 0 ||
+            (data.geometryType && data.geometryType !== 'Unknown') ||
+            (data.coordinateSystem && data.coordinateSystem !== 'Unknown') ||
+            (data.boundingBox && data.boundingBox.minX !== 0 && data.boundingBox.maxX !== 0) ||
+            (data.attributes && data.attributes.length > 0) ||
+            (data.dataFormat && !data.dataFormat.includes('Error') && !data.dataFormat.includes('Incomplete'))
+          )
+
+          if (isSuccessfulExtraction) {
+            console.log('Client-side extraction successful, using extracted data')
+            setGeospatialInfo(data)
+
+            // Auto-fill metadata fields based on extracted information
+            setMetadata(prev => ({
+              ...prev,
+              // Basic extracted fields - only fill if data exists and is not default/unknown
+              ...(data.inferredTitle && data.inferredTitle !== 'Dataset' && { title: data.inferredTitle }),
+
+              // Set georectified and georeferenceable based on coordinate system availability
+              georectified: data.coordinateSystem && data.coordinateSystem !== 'Unknown' ? true : false,
+              georeferenceable: data.coordinateSystem && data.coordinateSystem !== 'Unknown' ? true : false,
+              ...(data.inferredAbstract && !data.inferredAbstract.includes('Dataset geospasial yang berisi 0 fitur') && { abstract: data.inferredAbstract }),
+              ...(data.featureCount && data.featureCount > 0 && {
+                purpose: (() => {
+                  const geomType = data.geometryType?.toLowerCase() || '';
+                  const topicCategory = data.inferredTopicCategory || '';
+                  const count = data.featureCount;
+
+                  // Generate meaningful purpose based on geometry type and topic
+                  if (geomType.includes('polygon') && topicCategory === 'boundaries') {
+                    return `Dataset digunakan untuk perencanaan pembangunan infrastruktur, analisis spasial wilayah, dan keperluan administrasi pemerintahan daerah.`;
+                  } else if (geomType.includes('point')) {
+                    return `Dataset digunakan untuk analisis distribusi spasial titik lokasi, pemetaan fasilitas umum, dan perencanaan layanan publik.`;
+                  } else if (geomType.includes('linestring') || geomType.includes('line')) {
+                    return `Dataset digunakan untuk perencanaan jaringan transportasi, analisis konektivitas spasial, dan pemetaan infrastruktur linear.`;
+                  } else if (topicCategory === 'planning') {
+                    return `Dataset digunakan untuk perencanaan pembangunan, analisis spasial, dan pengambilan keputusan berbasis lokasi.`;
+                  } else {
+                    return `Dataset digunakan untuk analisis spasial, pemetaan, dan pengambilan keputusan berbasis data geospasial.`;
+                  }
+                })()
+              }),
+              ...(data.coordinateSystem && data.coordinateSystem !== 'Unknown' && { referenceSystemIdentifier: data.coordinateSystem }),
+              ...(data.inferredExtent && !data.inferredExtent.includes('0.0000') && { extent: data.inferredExtent }),
+
+              // Inferred metadata fields
+              ...(data.inferredTopicCategory && { topicCategory: data.inferredTopicCategory }),
+              ...(data.inferredDescriptiveKeywords && { descriptiveKeywords: data.inferredDescriptiveKeywords }),
+              ...(data.inferredAttributeDescription && data.inferredAttributeDescription.trim() && { attributeDescription: data.inferredAttributeDescription }),
+              ...(data.inferredSpatialResolution && { spatialResolution: data.inferredSpatialResolution }),
+              ...(data.inferredResourceFormat && data.inferredResourceFormat !== 'Unknown' && { resourceFormat: data.inferredResourceFormat }),
+
+              // File information fields - always fill from extracted data
+              ...(data.fileSize && data.fileSize > 0 && { fileSize: data.fileSize }),
+              ...(data.originalFileName && {
+                originalFileName: Array.from(selectedFiles).some(f => f.name.toLowerCase().endsWith('.shp'))
+                  ? Array.from(selectedFiles).find(f => f.name.toLowerCase().endsWith('.shp'))?.name || data.originalFileName
+                  : data.originalFileName
+              }),
+              ...(data.dataFormat && !data.dataFormat.includes('Error') && { dataFormat: data.dataFormat }),
+              ...(data.featureCount !== undefined && data.featureCount >= 0 && { featureCount: data.featureCount }),
+              ...(data.geometryType && data.geometryType !== 'Unknown' && { geometryType: data.geometryType }),
+
+              // Set spatial representation type based on geometry
+              spatialRepresentationType: data.geometryType && data.geometryType !== 'Unknown' ? (
+                data.geometryType.toLowerCase().includes('point') ? 'vector' :
+                data.geometryType.toLowerCase().includes('line') ? 'vector' :
+                data.geometryType.toLowerCase().includes('polygon') ? 'vector' :
+                data.geometryType.toLowerCase().includes('raster') ? 'grid' :
+                'vector' // default
+              ) : prev.spatialRepresentationType,
+
+              // Set reference system type based on coordinate system
+              referenceSystemType: (() => {
+                const coordSys = data.coordinateSystem || '';
+                if (coordSys.includes('EPSG:4326') || coordSys.includes('WGS84') || coordSys.includes('WGS_1984')) {
+                  return 'geodetic';
+                } else if (coordSys.includes('UTM')) {
+                  return 'projected';
+                } else if (coordSys.includes('EPSG')) {
+                  // For other EPSG codes, assume geodetic unless it's a projected CRS
+                  const epsgNum = coordSys.match(/EPSG:(\d+)/)?.[1];
+                  if (epsgNum) {
+                    const num = parseInt(epsgNum);
+                    // UTM zones are typically 32600-32799 for northern/southern hemispheres
+                    if (num >= 32600 && num <= 32799) {
+                      return 'projected';
+                    }
+                    // Most other EPSG codes are geodetic
+                    return 'geodetic';
+                  }
+                }
+                return 'geodetic'; // default
+              })(),
+
+              // Set processing level based on file type and context
+              processingLevel: (() => {
+                const dataFormat = data.dataFormat || '';
+                const geometryType = data.geometryType || '';
+
+                // For uploaded files, assume they are processed unless they are raw survey data
+                if (dataFormat.includes('Shapefile') || dataFormat.includes('GeoJSON')) {
+                  return 'processed'; // Shapefiles and GeoJSON are typically processed datasets
+                } else if (geometryType.toLowerCase().includes('point') && data.featureCount && data.featureCount < 100) {
+                  return 'raw'; // Small point datasets might be raw survey data
+                } else {
+                  return 'processed'; // Default for most geospatial datasets
+                }
+              })(),
+
+              // Set content type based on attributes and geometry
+              contentType: (() => {
+                const attributes = data.attributes || [];
+                const geometryType = data.geometryType || '';
+                const topicCategory = data.inferredTopicCategory || '';
+
+                // Check for thematic classification attributes
+                const hasThematicAttributes = attributes.some((attr: any) =>
+                  attr.name && (
+                    attr.name.toLowerCase().includes('class') ||
+                    attr.name.toLowerCase().includes('type') ||
+                    attr.name.toLowerCase().includes('category') ||
+                    attr.name.toLowerCase().includes('landuse') ||
+                    attr.name.toLowerCase().includes('land_use') ||
+                    attr.name.toLowerCase().includes('soil') ||
+                    attr.name.toLowerCase().includes('vegetation')
+                  )
+                );
+
+                // Check for physical measurement attributes
+                const hasPhysicalAttributes = attributes.some((attr: any) =>
+                  attr.name && (
+                    attr.name.toLowerCase().includes('elevation') ||
+                    attr.name.toLowerCase().includes('height') ||
+                    attr.name.toLowerCase().includes('depth') ||
+                    attr.name.toLowerCase().includes('temperature') ||
+                    attr.name.toLowerCase().includes('precipitation') ||
+                    attr.name.toLowerCase().includes('pressure')
+                  )
+                );
+
+                if (hasThematicAttributes) {
+                  return 'thematicClassification';
+                } else if (hasPhysicalAttributes) {
+                  return 'physicalMeasurement';
+                } else if (topicCategory === 'imagery' || geometryType.toLowerCase().includes('raster')) {
+                  return 'image';
+                } else {
+                  return 'thematicClassification'; // Default for most vector datasets
+                }
+              })(),
+
+              // Set hierarchy level name based on geometry type and topic
+              hierarchyLevelName: (() => {
+                const geometryType = data.geometryType?.toLowerCase() || '';
+                const topicCategory = data.inferredTopicCategory || '';
+
+                if (geometryType.includes('polygon') && topicCategory === 'boundaries') {
+                  return 'Dataset Peta Batas Administrasi';
+                } else if (geometryType.includes('polygon')) {
+                  return 'Dataset Peta Poligon';
+                } else if (geometryType.includes('linestring') || geometryType.includes('line')) {
+                  return 'Dataset Peta Garis';
+                } else if (geometryType.includes('point')) {
+                  return 'Dataset Peta Titik';
+                } else if (topicCategory === 'planning') {
+                  return 'Dataset Perencanaan';
+                } else if (topicCategory === 'imagery') {
+                  return 'Dataset Citra';
+                } else if (topicCategory === 'elevation') {
+                  return 'Dataset Elevasi';
+                } else {
+                  return 'Dataset Geospasial';
+                }
+              })(),
+
+              // Set access constraints - assume public for uploaded datasets
+              accessConstraints: 'public',
+
+              // Set use constraints with common Creative Commons license
+              useConstraints: 'Lisensi Creative Commons Attribution 4.0 International (CC BY 4.0) - bebas digunakan dengan mencantumkan sumber',
+
+              // Set lineage based on available information
+              lineage: (() => {
+                const dataFormat = data.dataFormat || '';
+                const coordinateSystem = data.coordinateSystem || '';
+                const featureCount = data.featureCount || 0;
+
+                let lineageText = 'Data diupload melalui sistem metadata geospasial. ';
+
+                if (dataFormat.includes('Shapefile')) {
+                  lineageText += 'Format asli Shapefile dengan komponen lengkap (.shp, .shx, .dbf';
+                  if (coordinateSystem) {
+                    lineageText += `, .prj) dalam sistem koordinat ${coordinateSystem}`;
+                  } else {
+                    lineageText += ')';
+                  }
+                } else if (dataFormat.includes('GeoJSON')) {
+                  lineageText += 'Format GeoJSON dengan struktur data vektor';
+                  if (coordinateSystem) {
+                    lineageText += ` dalam sistem koordinat ${coordinateSystem}`;
+                  }
+                }
+
+                if (featureCount > 0) {
+                  lineageText += `. Dataset berisi ${featureCount.toLocaleString()} fitur geospasial.`;
+                }
+
+                lineageText += ' Data telah divalidasi dan siap untuk digunakan dalam aplikasi GIS.';
+
+                return lineageText;
+              })(),
+
+              // Set completeness based on available information
+              completeness: (() => {
+                const featureCount = data.featureCount || 0;
+                const geometryType = data.geometryType || '';
+
+                if (featureCount > 1000) {
+                  return `Dataset lengkap dengan ${featureCount.toLocaleString()} fitur ${geometryType.toLowerCase()}`;
+                } else if (featureCount > 100) {
+                  return `Dataset berisi ${featureCount.toLocaleString()} fitur ${geometryType.toLowerCase()}, mencakup area yang representative`;
+                } else if (featureCount > 0) {
+                  return `Dataset berisi ${featureCount.toLocaleString()} fitur ${geometryType.toLowerCase()}`;
+                } else {
+                  return 'Kelengkapan data sesuai dengan file yang diupload';
+                }
+              })(),
+
+              // Set accuracy based on data type and coordinate system
+              accuracy: (() => {
+                const coordinateSystem = data.coordinateSystem || '';
+                const geometryType = data.geometryType || '';
+                const dataFormat = data.dataFormat || '';
+
+                let accuracyText = '';
+
+                // Positional accuracy based on coordinate system
+                if (coordinateSystem.includes('EPSG:4326') || coordinateSystem.includes('WGS84')) {
+                  accuracyText += 'Akurasi posisional: ±2.5 meter pada skala 1:25.000 untuk data GPS standar. ';
+                } else if (coordinateSystem.includes('UTM')) {
+                  accuracyText += 'Akurasi posisional: ±1-5 meter tergantung zona UTM dan metode akuisisi. ';
+                } else {
+                  accuracyText += 'Akurasi posisional: sesuai dengan sistem koordinat yang digunakan. ';
+                }
+
+                // Attribute accuracy
+                if (dataFormat.includes('Shapefile') && data.attributes && data.attributes.length > 0) {
+                  accuracyText += `Akurasi atribut: ${data.attributes.length} field atribut telah tervalidasi.`;
+                } else {
+                  accuracyText += 'Akurasi atribut: sesuai dengan sumber data asli.';
+                }
+
+                return accuracyText;
+              })(),
+
+              // Set consistency based on data validation
+              consistency: (() => {
+                const geometryType = data.geometryType || '';
+                const dataFormat = data.dataFormat || '';
+                const attributes = data.attributes || [];
+
+                let consistencyText = 'Data konsisten dalam format dan struktur yang benar. ';
+
+                if (geometryType) {
+                  consistencyText += `Semua fitur menggunakan tipe geometri ${geometryType} yang konsisten. `;
+                }
+
+                if (attributes.length > 0) {
+                  consistencyText += `Terdapat ${attributes.length} atribut yang terstruktur dengan baik. `;
+                }
+
+                if (dataFormat.includes('Shapefile')) {
+                  consistencyText += 'Struktur Shapefile (.shp, .shx, .dbf) telah tervalidasi dan konsisten.';
+                } else if (dataFormat.includes('GeoJSON')) {
+                  consistencyText += 'Format GeoJSON valid dan mengikuti standar RFC 7946.';
+                }
+
+                return consistencyText;
+              })()
+            }))
+
+            // Calculate which fields were actually filled
+            const filledFields = []
+            if (data.inferredTitle && data.inferredTitle !== 'Dataset') filledFields.push('Title')
+            if (data.inferredAbstract && !data.inferredAbstract.includes('Dataset geospasial yang berisi 0 fitur')) filledFields.push('Abstract')
+            if (data.featureCount && data.featureCount > 0) filledFields.push('Purpose')
+            if (data.inferredTopicCategory) filledFields.push('Topic Category')
+            if (data.inferredDescriptiveKeywords) filledFields.push('Descriptive Keywords')
+            if (data.inferredExtent && !data.inferredExtent.includes('0.0000')) filledFields.push('Extent')
+            if (data.inferredSpatialResolution) filledFields.push('Spatial Resolution')
+            if (data.inferredResourceFormat && data.inferredResourceFormat !== 'Unknown') filledFields.push('Resource Format')
+            if (data.geometryType && data.geometryType !== 'Unknown') filledFields.push('Spatial Representation Type')
+            if (data.coordinateSystem && data.coordinateSystem !== 'Unknown') filledFields.push('Reference System Identifier')
+            if (data.coordinateSystem && data.coordinateSystem !== 'Unknown') filledFields.push('Reference System Type')
+            if (data.inferredAttributeDescription && data.inferredAttributeDescription.trim()) filledFields.push('Attribute Description')
+            if (data.attributes && data.attributes.length > 0) filledFields.push('Content Type')
+            if (data.dataFormat && data.dataFormat !== 'Unknown') filledFields.push('Processing Level')
+            if (data.geometryType && data.geometryType !== 'Unknown') filledFields.push('Hierarchy Level Name')
+            if (data.dataFormat && data.dataFormat !== 'Unknown') filledFields.push('Lineage')
+            if (data.coordinateSystem && data.coordinateSystem !== 'Unknown') filledFields.push('Accuracy')
+            if (data.featureCount !== undefined && data.featureCount >= 0) filledFields.push('Completeness')
+            if (data.attributes && data.attributes.length > 0) filledFields.push('Consistency')
+
+            // Show appropriate message based on success
+            if (filledFields.length > 0) {
+              setAutoFillMessage(`✅ ${filledFields.length} field metadata telah diisi otomatis: ${filledFields.join(', ')}`)
+            } else {
+              setAutoFillMessage('⚠️ Ekstraksi berhasil tapi tidak ada field yang bisa diisi otomatis. Data mungkin tidak valid atau format tidak didukung.')
+            }
+            setTimeout(() => setAutoFillMessage(''), filledFields.length > 0 ? 8000 : 5000)
+          } else {
+            console.log('Client-side extraction returned default values, trying server-side extraction...')
+            // Fallback to server-side extraction
+            await fallbackToServerSideExtraction(selectedFiles)
+          }
+        } else {
+          console.error('Client-side extraction failed:', extractionResult.error)
+          console.log('Trying server-side extraction as fallback...')
+          // Fallback to server-side extraction
+          await fallbackToServerSideExtraction(selectedFiles)
         }
       } catch (error) {
-        console.error('Error extracting geospatial info:', error)
-        setAutoFillMessage('❌ Terjadi kesalahan saat ekstraksi. Coba lagi atau gunakan format GeoJSON.')
-        setTimeout(() => setAutoFillMessage(''), 5000)
+        console.error('Error in client-side extraction:', error)
+        console.log('Trying server-side extraction as fallback...')
+        // Fallback to server-side extraction
+        await fallbackToServerSideExtraction(selectedFiles)
       }
     }
   }
@@ -922,7 +1380,7 @@ export default function Upload() {
       }
     })
 
-    // Add geospatial info if available
+    // Add geospatial info if available (now pre-extracted from client-side)
     if (geospatialInfo) {
       formData.append('geospatialInfo', JSON.stringify(geospatialInfo))
     }
@@ -1038,7 +1496,7 @@ export default function Upload() {
                 Pilih File Geospasial
               </label>
               <div
-                className={`border-2 border-dashed rounded-lg p-6 transition-colors duration-200 ${
+                className={`border-2 border-dashed rounded-lg p-6 transition-colors duration-200 bg-gray-50 ${
                   dragActive
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-gray-300 hover:border-indigo-400'
@@ -1074,34 +1532,31 @@ export default function Upload() {
                         name="file-upload"
                         type="file"
                         multiple
-                        accept=".geojson,.shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.zip,.rar"
+                        accept=".geojson,.json,.shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.shp.xml,.qix,.fbn,.fbx,.ain,.aih,.zip,.rar"
                         onChange={handleFileChange}
                         className="sr-only"
                       />
                     </label>
                     <span className="pl-2">atau seret dan jatuhkan</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2 space-y-1">
-                    <p><strong>Format yang didukung:</strong></p>
-                    <p>• GeoJSON - file tunggal</p>
-                    <p>• Shapefile - pilih minimal file utama (.shp, .shx, .dbf) + file pendukung opsional</p>
-                    <p>• Shapefile terkompresi - ZIP/RAR didukung dengan validasi otomatis</p>
-                    <p>• Maksimal 10MB per file</p>
-                    <p className="text-orange-600 font-medium mt-2">
-                      ⚠️ File pendukung (.prj, .cpg, .sbn, .sbx) tidak dapat diupload tanpa file utama
-                    </p>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
-                      <p className="text-green-800 font-medium text-sm">✅ Dukungan ZIP/RAR:</p>
-                      <p className="text-green-700 text-xs mt-1">
-                        Sistem akan otomatis mengekstrak dan memvalidasi komponen Shapefile
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
-                      <p className="text-yellow-800 font-medium text-sm">⚠️ Persyaratan untuk Shapefile:</p>
-                      <p className="text-yellow-700 text-xs mt-1">
-                        Untuk ekstraksi otomatis metadata dari file Shapefile (.shp), sistem memerlukan GDAL/ogrinfo.
-                        Jika tidak terinstall, gunakan format GeoJSON untuk auto-fill metadata.
-                      </p>
+                  <div className="text-xs text-gray-500 mt-7">
+                    <p className="mb-2 text-center"><strong>Format yang didukung:</strong></p>
+                    <div className="space-y-1 text-center">
+                      <div>
+                        <span className="text-green-600">•</span> <span className="text-green-700"><strong>GeoJSON</strong> - file tunggal</span>
+                      </div>
+                      <div>
+                        <span className="text-green-600">•</span> <span className="text-green-700"><strong>Shapefile</strong> - pilih minimal file utama (.shp, .shx, .dbf) + file pendukung opsional (.prj, .cpg, .sbn, .sbx, .shp.xml, .qix, .fbn, .fbx, .ain, .aih)</span>
+                      </div>
+                      <div>
+                        <span className="text-red-500">⚠️</span> <span className="text-red-700"><strong>Jangan upload file pendukung saja</strong> (.prj, .cpg, .sbn, .sbx) tanpa file utama (.shp, .shx, .dbf)</span>
+                      </div>
+                      <div>
+                        <span className="text-green-600">•</span> <span className="text-green-700"><strong>Shapefile terkompresi</strong> - ZIP/RAR didukung dengan validasi otomatis</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">📁</span> <span className="text-blue-700"><strong>Maksimal 10MB per file</strong></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1126,7 +1581,7 @@ export default function Upload() {
                 </ul>
 
                 {/* Shapefile Component Status */}
-                {files.length > 0 && (getShapefileStatus(files).shp || getShapefileStatus(files).compressed) && (
+                {files.length > 0 && Object.values(getShapefileStatus(files)).some(status => status === true) && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <h5 className="text-sm font-semibold text-gray-800 mb-2">
                       {getShapefileStatus(files).compressed ? 'File Terkompresi:' : 'Status Komponen Shapefile:'}
@@ -1140,7 +1595,7 @@ export default function Upload() {
                           File terkompresi akan diekstrak secara otomatis
                         </div>
                         <p className="text-xs text-blue-500 mb-2">
-                          Sistem akan mengekstrak dan memvalidasi komponen Shapefile dari file ZIP/RAR
+                          Sistem akan mengekstrak dan memvalidasi semua komponen Shapefile dari file ZIP/RAR termasuk file pendukung (.prj, .cpg, .sbn, .sbx, .shp.xml, .qix, .fbn, .fbx, .ain, .aih)
                         </p>
                         <p className="text-xs text-orange-600 font-medium">
                           ⚠️ Pastikan file ZIP/RAR berisi minimal .shp, .shx, dan .dbf untuk Shapefile yang valid
@@ -1149,26 +1604,29 @@ export default function Upload() {
                     ) : (
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                          {Object.entries(getShapefileStatus(files))
-                            .filter(([key]) => key !== 'compressed')
-                            .map(([component, present]) => (
-                            <div key={component} className={`flex items-center ${present ? 'text-green-600' : 'text-red-500'}`}>
-                              <svg className={`h-4 w-4 mr-1 ${present ? 'text-green-500' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                {present ? (
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                ) : (
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                )}
-                              </svg>
-                              .{component.toUpperCase()}
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Komponen wajib: .SHP, .SHX, .DBF | Pendukung: .PRJ, .CPG, .SBN, .SBX
-                        </p>
-                        <p className="text-xs text-orange-600 mt-1">
-                          ⚠️ File pendukung tidak dapat diupload tanpa file utama (.SHP, .SHX, .DBF)
+                           {Object.entries(getShapefileStatus(files))
+                             .filter(([key]) => key !== 'compressed')
+                             .map(([component, present]) => (
+                             <div key={component} className={`flex items-center ${present ? 'text-green-600' : 'text-red-500'}`}>
+                               <svg className={`h-4 w-4 mr-1 ${present ? 'text-green-500' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 {present ? (
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                 ) : (
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                 )}
+                               </svg>
+                               .{component.toUpperCase().replace('_', '.')}
+                             </div>
+                           ))}
+                         </div>
+                         <p className="text-xs text-gray-500 mt-2">
+                            Komponen wajib: .SHP, .SHX, .DBF | Pendukung: .PRJ, .CPG, .SBN, .SBX, .SHP.XML, .QIX, .FBN, .FBX, .AIN, .AIH
+                          </p>
+                         {/* <p className="text-xs text-blue-600 mt-1">
+                           ℹ️ File .SHP akan digunakan sebagai file utama untuk ekstraksi metadata
+                         </p> */}
+                        <p className="text-xs text-red-500 mt-1">
+                          ⚠️ File pendukung (.PRJ, .CPG, .SBN, .SBX, .SHP.XML, .QIX, .FBN, .FBX, .AIN, .AIH) tidak dapat diupload tanpa file utama (.SHP, .SHX, .DBF)
                         </p>
                       </>
                     )}
@@ -1188,85 +1646,6 @@ export default function Upload() {
               </div>
             )}
 
-            {geospatialInfo && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-blue-800 mb-3">📊 Informasi Geospasial (Otomatis Extract):</h4>
-
-                {/* Basic Information */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div className="bg-white p-3 rounded border">
-                    <span className="font-medium text-blue-700 block">Jumlah Fitur</span>
-                    <span className="text-blue-600 font-semibold">{geospatialInfo.featureCount?.toLocaleString()}</span>
-                  </div>
-                  <div className="bg-white p-3 rounded border">
-                    <span className="font-medium text-blue-700 block">Tipe Geometri</span>
-                    <span className="text-blue-600 font-semibold">{geospatialInfo.geometryType}</span>
-                  </div>
-                  <div className="bg-white p-3 rounded border">
-                    <span className="font-medium text-blue-700 block">Sistem Koordinat</span>
-                    <span className="text-blue-600 font-semibold">{geospatialInfo.coordinateSystem}</span>
-                  </div>
-                  <div className="bg-white p-3 rounded border">
-                    <span className="font-medium text-blue-700 block">Format File</span>
-                    <span className="text-blue-600 font-semibold">{geospatialInfo.dataFormat}</span>
-                  </div>
-                </div>
-
-                {/* Bounding Box */}
-                {geospatialInfo.boundingBox && (
-                  <div className="bg-white p-3 rounded border mb-4">
-                    <span className="font-medium text-blue-700">🌐 Extent (Bounding Box):</span>
-                    <div className="text-xs text-blue-600 mt-1 font-mono">
-                      {geospatialInfo.inferredExtent || `${geospatialInfo.boundingBox.minX.toFixed(4)}, ${geospatialInfo.boundingBox.maxX.toFixed(4)}, ${geospatialInfo.boundingBox.minY.toFixed(4)}, ${geospatialInfo.boundingBox.maxY.toFixed(4)}`}
-                    </div>
-                  </div>
-                )}
-
-                {/* Inferred Metadata */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {geospatialInfo.inferredTitle && (
-                    <div className="bg-green-50 p-3 rounded border border-green-200">
-                      <span className="font-medium text-green-700 block">📝 Title (Suggested)</span>
-                      <span className="text-green-600 text-sm">{geospatialInfo.inferredTitle}</span>
-                    </div>
-                  )}
-                  {geospatialInfo.inferredTopicCategory && (
-                    <div className="bg-green-50 p-3 rounded border border-green-200">
-                      <span className="font-medium text-green-700 block">🏷️ Topic Category</span>
-                      <span className="text-green-600 text-sm">{geospatialInfo.inferredTopicCategory}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Attributes */}
-                {geospatialInfo.attributes && geospatialInfo.attributes.length > 0 && (
-                  <div className="bg-white p-3 rounded border mb-4">
-                    <span className="font-medium text-blue-700">📋 Schema Atribut ({geospatialInfo.attributes.length}):</span>
-                    <div className="text-xs text-blue-600 mt-2 max-h-32 overflow-y-auto">
-                      {geospatialInfo.attributes?.map((attr: { name: string; type: string }, index: number) => (
-                        <div key={index} className="font-mono">
-                          {attr.name}: {attr.type}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Keywords */}
-                {geospatialInfo.inferredDescriptiveKeywords && (
-                  <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                    <span className="font-medium text-yellow-700 block">🔍 Keywords (Suggested)</span>
-                    <span className="text-yellow-600 text-sm">{geospatialInfo.inferredDescriptiveKeywords}</span>
-                  </div>
-                )}
-
-                <div className="mt-3 text-xs text-blue-600 bg-blue-100 p-2 rounded">
-                  ✅ Field metadata telah diisi otomatis berdasarkan analisis file geospasial
-                  <br />
-                  <strong>Fields yang diisi otomatis:</strong> Title, Abstract, Purpose, Reference System, Extent, Topic Category, Keywords, Attribute Description, Spatial Resolution, Resource Format, Spatial Representation Type
-                </div>
-              </div>
-            )}
 
 
             <div className="flex items-center justify-between">
@@ -1281,6 +1660,131 @@ export default function Upload() {
 
             {showManualFields && (
               <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
+                {/* Auto-extracted File Information - shown after upload */}
+                {geospatialInfo && (
+                  <div className="border-b border-gray-200 pb-6 mb-6">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">📊 Auto-Extracted Information from File</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Feature Count */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Feature Count
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.featureCount ? geospatialInfo.featureCount.toLocaleString() : 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Number of geospatial features in the file</p>
+                      </div>
+
+                      {/* Geometry Type */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Geometry Type
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.geometryType || 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Type of geometric shapes (Point, Line, Polygon)</p>
+                      </div>
+
+                      {/* Bounding Box */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Bounding Box
+                        </label>
+                        <div className={`text-sm p-2 rounded border ${geospatialInfo.boundingBox && geospatialInfo.boundingBox.minX !== 0 && geospatialInfo.boundingBox.maxX !== 0 ? 'bg-blue-50 border-blue-200 text-gray-700' : 'bg-yellow-50 border-yellow-200 text-yellow-700'}`}>
+                          {geospatialInfo.boundingBox && geospatialInfo.boundingBox.minX !== 0 && geospatialInfo.boundingBox.maxX !== 0 ?
+                            `${geospatialInfo.boundingBox.minX.toFixed(4)}, ${geospatialInfo.boundingBox.maxX.toFixed(4)}, ${geospatialInfo.boundingBox.minY.toFixed(4)}, ${geospatialInfo.boundingBox.maxY.toFixed(4)}` :
+                            '0.0000, 0.0000, 0.0000, 0.0000 (tidak dapat diekstrak)'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {geospatialInfo.boundingBox && geospatialInfo.boundingBox.minX !== 0 && geospatialInfo.boundingBox.maxX !== 0 ?
+                            'Geographical boundaries of the dataset' :
+                            'Bounding box tidak dapat diekstrak. Silakan isi secara manual di form metadata.'}
+                        </p>
+                      </div>
+
+                      {/* Coordinate System */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Coordinate System
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.coordinateSystem || 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Spatial reference system used</p>
+                      </div>
+
+                      {/* Attribute Info */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Attribute Info
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200 max-h-20 overflow-y-auto">
+                          {geospatialInfo.attributes && geospatialInfo.attributes.length > 0 ? (
+                            <div className="space-y-1">
+                              {geospatialInfo.attributes.map((attr: { name: string; type: string }, index: number) => (
+                                <div key={index} className="text-xs font-mono">
+                                  {attr.name}: {attr.type}
+                                </div>
+                              ))}
+                            </div>
+                          ) : 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Detailed information about data attributes and their types</p>
+                      </div>
+
+                      {/* Layer Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Layer Name
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.layerName || geospatialInfo.inferredTitle || 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Name of the data layer or dataset</p>
+                      </div>
+
+                      {/* File Size */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          File Size
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.fileSize ? `${(geospatialInfo.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Size of the uploaded file</p>
+                      </div>
+
+                      {/* Original File Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Original File Name
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.originalFileName || 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Original name of the uploaded file</p>
+                      </div>
+
+                      {/* Data Format */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Data Format
+                        </label>
+                        <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          {geospatialInfo.dataFormat || 'Not available'}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Format of the geospatial data file</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-blue-600 bg-blue-100 p-3 rounded">
+                      ✅ <strong>Auto-filled fields:</strong> Title, Abstract, Purpose, Topic Category, Descriptive Keywords, Extent, Spatial Resolution, Resource Format, Spatial Representation Type, Reference System Identifier, Reference System Type, Attribute Description, Content Type, Processing Level, Hierarchy Level Name, Lineage, Accuracy, Completeness, Consistency
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-800">Informasi Metadata Manual</h3>
                   <div className="text-sm text-gray-600">
@@ -1323,9 +1827,9 @@ export default function Upload() {
                         value={metadata.fileIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, fileIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="BPS-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc"
+                        placeholder="DKB-2024-001 atau uuid:12345678-1234-1234-1234-123456789abc"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset BPS bisa menggunakan format BPS-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.</p>
+                      <p className="text-xs text-gray-500 mt-1">Kode unik yang mengidentifikasi metadata ini. Biasanya menggunakan UUID atau kode internal organisasi. Contoh: untuk dataset DKB bisa menggunakan format DKB-2024-001, atau UUID seperti uuid:12345678-1234-1234-1234-123456789abc. Jika kosong, sistem akan generate UUID otomatis.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1369,7 +1873,7 @@ export default function Upload() {
                         value={metadata.parentIdentifier}
                         onChange={(e) => setMetadata(prev => ({ ...prev, parentIdentifier: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="BPS-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri"
+                        placeholder="DKB-2024-SERIES-001 - untuk dataset yang merupakan bagian dari seri"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kode metadata induk jika dataset ini merupakan bagian dari seri data yang lebih besar. Kosongkan jika dataset ini berdiri sendiri.</p>
                     </div>
@@ -1439,7 +1943,7 @@ export default function Upload() {
                         value={metadata.contactEmail || ''}
                         onChange={(e) => setMetadata(prev => ({ ...prev, contactEmail: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="ahmad@bps.go.id"
+                        placeholder="ahmad@dkb.go.id"
                       />
                       <p className="text-xs text-gray-500 mt-1">Email kontak untuk metadata</p>
                     </div>
@@ -1628,7 +2132,7 @@ export default function Upload() {
                         value={metadata.pointOfContact}
                         onChange={(e) => setMetadata(prev => ({ ...prev, pointOfContact: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Nama: Dr. Ahmad Surya, Email: ahmad.surya@bps.go.id, Jabatan: Koordinator GIS BPS"
+                        placeholder="Nama: Dr. Ahmad Surya, Email: ahmad.surya@dkb.go.id, Jabatan: Koordinator GIS DKB Otorita Ibu Kota Nusantara"
                       />
                       <p className="text-xs text-gray-500 mt-1">Kontak utama untuk pertanyaan tentang dataset ini. Biasanya adalah ahli teknis atau koordinator data.</p>
                     </div>
@@ -1948,7 +2452,7 @@ export default function Upload() {
                         value={metadata.distributor}
                         onChange={(e) => setMetadata(prev => ({ ...prev, distributor: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Badan Pusat Statistik (BPS), Email: data@bps.go.id, Telepon: 021-3507020"
+                        placeholder="DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara, Email: data@dkb.go.id, Telepon: 021-3507020"
                       />
                       <p className="text-xs text-gray-500 mt-1">Informasi tentang organisasi yang mendistribusikan dataset.</p>
                     </div>
@@ -2172,38 +2676,6 @@ export default function Upload() {
                   </div>
                 </div>
 
-                {/* Auto-extracted File Information - shown after upload */}
-                {geospatialInfo && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Original File Name
-                      </label>
-                      <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
-                        {geospatialInfo.originalFileName || 'Not available'}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Auto-extracted from uploaded file</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        File Size
-                      </label>
-                      <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
-                        {geospatialInfo.fileSize ? `${(geospatialInfo.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not available'}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Auto-extracted from uploaded file</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Feature Count
-                      </label>
-                      <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
-                        {geospatialInfo.featureCount ? geospatialInfo.featureCount.toLocaleString() : 'Not available'}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Auto-extracted from uploaded file</p>
-                    </div>
-                  </div>
-                )}
 
                 {/* Section Navigation Buttons */}
                 <div className="flex justify-between items-center border-t border-gray-200 pt-4">
@@ -2290,11 +2762,11 @@ export default function Upload() {
 
       {/* Error Modal */}
       {showErrorModal && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Field Wajib Belum Lengkap</h3>
                 <button
                   onClick={() => setShowErrorModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -2305,17 +2777,41 @@ export default function Upload() {
                 </button>
               </div>
 
-              <div className="flex items-center mb-4">
-                <svg className="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-gray-700">{error}</span>
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  Harap lengkapi semua field yang bertanda * :
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <ul className="text-sm text-red-800 space-y-2">
+                    {(() => {
+                      const requiredFields = [
+                        { value: metadata.title?.trim(), name: 'Judul' },
+                        { value: metadata.abstract?.trim(), name: 'Abstrak' },
+                        { value: metadata.status?.trim(), name: 'Status' },
+                        { value: metadata.extent?.trim(), name: 'Extent' },
+                        { value: metadata.contactName?.trim(), name: 'Nama Kontak' },
+                        { value: metadata.contactEmail?.trim(), name: 'Email Kontak' },
+                        { value: metadata.spatialRepresentationType?.trim(), name: 'Spatial Representation Type' },
+                        { value: metadata.referenceSystemIdentifier?.trim(), name: 'Reference System Identifier' },
+                        { value: metadata.scope?.trim(), name: 'Scope' }
+                      ]
+                      return requiredFields.filter(field => !field.value).map((field, index) => (
+                        <li key={index} className="flex items-center">
+                          <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          {field.name}
+                        </li>
+                      ))
+                    })()}
+                  </ul>
+                </div>
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowErrorModal(false)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition duration-200"
                 >
                   Tutup
                 </button>

@@ -1,5 +1,3 @@
-Berdasarkan kode yang saya analisis, berikut adalah penjelasan lengkap tentang ekstraksi data geospasial otomatis:
-
 ## 🔍 **Teknologi Ekstraksi Data Geospasial**
 
 ### **1. Tools yang Digunakan:**
@@ -102,113 +100,49 @@ if (geomType.includes('point')) {
   return `Dataset poligon geospasial yang berisi ${count} fitur poligon`
 }
 ```
+## 📊 **Tabel Field Metadata Auto-Fill Lengkap**
 
-## ✅ **Keuntungan Implementasi Saat Ini**
+| **Field Metadata** | **Sumber Data** | **Logika Inference** | **Wajib/Optional** | **Kategori** |
+|-------------------|----------------|---------------------|-------------------|-------------|
+| **featureCount** | ✅ Diextract dari parsing geometri Shapefile/GeoJSON | Jumlah fitur yang berhasil diparsing | - | File Info |
+| **geometryType** | ✅ Diextract dari parsing geometri | Tipe geometri utama (Point, LineString, Polygon) | - | File Info |
+| **boundingBox** | ✅ Diextract dari koordinat geometri | Min/max koordinat X,Y dari semua fitur | - | File Info |
+| **coordinateSystem** | ✅ Diextract dari .prj file atau header | EPSG code atau nama sistem koordinat | - | File Info |
+| **attributeInfo** | ✅ Diextract dari .dbf file Shapefile | Daftar nama field dan tipe data atribut | - | File Info |
+| **layerName** | ✅ Diextract dari nama file atau metadata | Nama layer dari file atau nama file | - | File Info |
+| **fileSize** | ✅ Diextract dari File API browser | Ukuran file dalam bytes | - | File Info |
+| **originalFileName** | ✅ Diextract dari File API browser | Nama file asli yang diupload | - | File Info |
+| **dataFormat** | ✅ Diextract dari ekstensi file | "Shapefile" atau "GeoJSON" | - | File Info |
+| **title** | 🔄 Diinferensikan dari layerName + geometryType | `"Dataset [LayerName] - [GeometryType]"` | ✅ Wajib | Identification |
+| **abstract** | 🔄 Diinferensikan dari semua data | Deskripsi lengkap dataset dengan statistik | ✅ Wajib | Identification |
+| **purpose** | 🔄 Diinferensikan dari geometryType + topicCategory | Deskripsi penggunaan berdasarkan tipe data | ❌ Optional | Identification |
+| **topicCategory** | 🔄 Diinferensikan dari geometryType + attributes | "boundaries", "planning", dll berdasarkan analisis | ❌ Optional | Identification |
+| **descriptiveKeywords** | 🔄 Diinferensikan dari attribute names | Kata kunci dari nama atribut + tipe geometri | ❌ Optional | Identification |
+| **extent** | 🔄 Diinferensikan dari boundingBox | Format bounding box untuk ISO 19115 | ✅ Wajib | Identification |
+| **spatialResolution** | 🔄 Diinferensikan dari boundingBox + geometryType | Estimasi skala berdasarkan densitas data | ❌ Optional | Identification |
+| **resourceFormat** | 🔄 Diinferensikan dari dataFormat | Format file lengkap (Shapefile, GeoJSON) | ❌ Optional | Identification |
+| **spatialRepresentationType** | 🔄 Diinferensikan dari geometryType | "vector" untuk semua data vektor | ✅ Wajib | Spatial Representation |
+| **referenceSystemIdentifier** | 🔄 Diinferensikan dari coordinateSystem | EPSG code lengkap | ✅ Wajib | Reference System |
+| **referenceSystemType** | 🔄 Diinferensikan dari coordinateSystem | "geodetic" atau "projected" berdasarkan EPSG | ❌ Optional | Reference System |
+| **attributeDescription** | 🔄 Diinferensikan dari attributeInfo | Deskripsi detail semua atribut | ❌ Optional | Content |
+| **contentType** | 🔄 Diinferensikan dari attribute analysis | "thematicClassification" atau "physicalMeasurement" | ❌ Optional | Content |
+| **processingLevel** | 🔄 Diinferensikan dari dataFormat + geometryType | "processed" untuk dataset siap pakai | ❌ Optional | Identification |
+| **hierarchyLevelName** | 🔄 Diinferensikan dari geometryType + topicCategory | Nama deskriptif level hierarki | ❌ Optional | Root |
+| **lineage** | 🔄 Diinferensikan dari semua info teknis | Riwayat lengkap pengumpulan dan pemrosesan | ❌ Optional | Data Quality |
+| **accuracy** | 🔄 Diinferensikan dari coordinateSystem + dataFormat | Deskripsi akurasi posisional dan atribut | ❌ Optional | Data Quality |
+| **completeness** | 🔄 Diinferensikan dari featureCount + geometryType | Tingkat kelengkapan berdasarkan jumlah fitur | ❌ Optional | Data Quality |
+| **consistency** | 🔄 Diinferensikan dari data validation | Tingkat konsistensi struktur data | ❌ Optional | Data Quality |
+| **accessConstraints** | 🔄 Default value | "public" untuk dataset yang diupload | ❌ Optional | Constraints |
+| **useConstraints** | 🔄 Default value | Lisensi Creative Commons 4.0 lengkap | ❌ Optional | Constraints |
+| **dateStamp** | 🔄 Default value | Tanggal hari ini (YYYY-MM-DD) | ❌ Optional | Root |
+| **language** | 🔄 Default value | "ind" (Bahasa Indonesia) | ✅ Wajib | Root |
+| **characterSet** | 🔄 Default value | "utf8" | ❌ Optional | Root |
+| **hierarchyLevel** | 🔄 Default value | "dataset" | ✅ Wajib | Root |
+| **metadataStandardName** | 🔄 Default value | "ISO 19115" | ❌ Optional | Root |
+| **metadataStandardVersion** | 🔄 Default value | "2003/Cor.1:2006" | ❌ Optional | Root |
+| **locale** | 🔄 Default value | "id" | ❌ Optional | Root |
+| **status** | 🔄 Default value | "completed" | ✅ Wajib | Identification |
+| **scope** | 🔄 Default value | "dataset" | ✅ Wajib | Data Quality |
+| **georectified** | 🔄 Default value | true (untuk data dengan koordinat) | ❌ Optional | Spatial Representation |
+| **georeferenceable** | 🔄 Default value | true (untuk data dengan koordinat) | ❌ Optional | Spatial Representation |
 
-1. **Otomatis**: Tidak perlu input manual untuk field-field dasar
-2. **Akurat**: Menggunakan data langsung dari file geospasial
-3. **Standar**: Mengikuti spesifikasi ISO 19115
-4. **Fleksibel**: Mendukung berbagai format file
-5. **User-Friendly**: Field yang sudah terisi dapat diedit jika perlu
-
-## 📋 **Ringkasan Field yang Diisi Otomatis:**
-
-**11 field metadata** diisi otomatis saat upload file geospasial, sehingga user hanya perlu melengkapi field tambahan seperti contact information, purpose detail, dan constraints jika diperlukan.
-
-----------------
-
-| **Field** | **Diekstrak?** | **Diinferensikan?** | **Auto-Filled?** | **Disimpan ke DB?** |
-|-----------|----------------|-------------------|------------------|-------------------|
-| featureCount | ✅ | - | ✅ (untuk purpose) | ✅ |
-| geometryType | ✅ | - | ✅ (untuk spatialRepresentationType) | ✅ |
-| boundingBox | ✅ | - | ✅ (untuk extent) | ✅ |
-| coordinateSystem | ✅ | - | ✅ | ✅ |
-| attributeInfo | ✅ | - | ✅ (untuk attributeDescription) | ✅ |
-| layerName | ✅ | - | ✅ (untuk title) | ❌ (hanya untuk inferensi) |
-| fileSize | ✅ | - | ❌ (hanya ditampilkan) | ✅ |
-| originalFileName | ✅ | - | ❌ (hanya ditampilkan) | ✅ |
-| dataFormat | ✅ | - | ✅ (untuk resourceFormat) | ✅ |
-| title | - | ✅ | ✅ | ✅ |
-| abstract | - | ✅ | ✅ | ✅ |
-| Purpose | - | ✅ (dari featureCount) | ✅ | ✅ |
-| Reference System Identifier | - | ✅ (dari coordinateSystem) | ✅ | ✅ |
-| geographicExtent | - | ✅ (dari boundingBox) | ✅ | ✅ |
-| topicCategory | - | ✅ | ✅ | ✅ |
-| keywords | - | ✅ | ✅ | ✅ |
-| Attribute Description | - | ✅ (dari attributeInfo) | ✅ | ✅ |
-| Spatial Resolution | - | ✅ | ✅ | ✅ |
-| Resource Format | - | ✅ (dari dataFormat) | ✅ | ✅ |
-| Spatial Representation Type | - | ✅ (dari geometryType) | ✅ | ✅ |
-
---------------------
-
-Berdasarkan analisis mendalam terhadap kode, berikut adalah status lengkap field yang Anda sebutkan - apakah mereka ditampilkan kepada user dan di halaman mana:
-
-## 📊 **Field yang DITAMPILKAN secara Langsung ke User:**
-
-### **1. Di Halaman Upload (`pages/upload.tsx`)**
-Field raw yang diekstrak ditampilkan di bagian **"📊 Informasi Geospasial (Otomatis Extract):"** setelah upload file:
-
-```javascript
-// Lines 1191-1268 - Geospatial Info Display Section
-✅ featureCount → "Jumlah Fitur: {count}"
-✅ geometryType → "Tipe Geometri: {type}"  
-✅ boundingBox → "🌐 Extent (Bounding Box): {coords}"
-✅ coordinateSystem → "Sistem Koordinat: {system}"
-✅ attributeInfo → "📋 Schema Atribut ({count}): {attributes}"
-```
-
-### **2. Di Halaman Detail Metadata (`pages/metadata/[id].tsx`)**
-Field raw ditampilkan di bagian **"File Information"** (section `fileInfo`):
-
-```javascript
-// Lines 1492-1525 - File Info Section
-✅ originalFileName → "Original File Name: {name}"
-✅ fileSize → "File Size: {size} MB"
-✅ featureCount → "Feature Count: {count}"
-✅ geometryType → "Geometry Type: {type}"
-✅ dataFormat → "Data Format: {format}"
-```
-
-## 🔄 **Field yang DITRANSFORMASI dan Ditampilkan:**
-
-### **Di Halaman Detail Metadata:**
-```javascript
-✅ boundingBox → geographicExtent → "Extent: {formatted_coords}"
-✅ coordinateSystem → referenceSystemIdentifier → "Reference System Identifier: {epsg}"
-✅ attributeInfo → attributeDescription → "Attribute Description: {description}"
-```
-
-## 🚫 **Field yang TIDAK Ditampilkan secara Langsung:**
-
-### **Hanya untuk Inferensi:**
-```javascript
-❌ layerName → Hanya digunakan untuk inferensi title, tidak ditampilkan langsung
-```
-
-## 📋 **Ringkasan Lengkap:**
-
-| **Field** | **Ditampilkan?** | **Halaman** | **Lokasi Tampilan** | **Format Tampilan** |
-|-----------|------------------|-------------|-------------------|-------------------|
-| `featureCount` | ✅ Ya | Upload + Detail | Geospatial Info + File Info | "Jumlah Fitur: 1,234" |
-| `geometryType` | ✅ Ya | Upload + Detail | Geospatial Info + File Info | "Tipe Geometri: Polygon" |
-| `boundingBox` | ✅ Ya | Upload | Geospatial Info | "Extent: 95.0°BT, 141.0°BT..." |
-| `boundingBox` | ✅ Ya (transformed) | Detail | Metadata Fields | "Extent: formatted_coords" |
-| `coordinateSystem` | ✅ Ya | Upload | Geospatial Info | "Sistem Koordinat: EPSG:4326" |
-| `coordinateSystem` | ✅ Ya (transformed) | Detail | Metadata Fields | "Reference System Identifier: EPSG:4326" |
-| `attributeInfo` | ✅ Ya | Upload | Geospatial Info | "Schema Atribut (5): name:String..." |
-| `attributeInfo` | ✅ Ya (transformed) | Detail | Metadata Fields | "Attribute Description: detailed text" |
-| `layerName` | ❌ Tidak | - | - | Hanya untuk inferensi title |
-| `fileSize` | ✅ Ya | Detail | File Info | "File Size: 10.5 MB" |
-| `originalFileName` | ✅ Ya | Detail | File Info | "Original File Name: data.shp" |
-| `dataFormat` | ✅ Ya | Detail | File Info | "Data Format: Shapefile" |
-
-## 🎯 **Kesimpulan:**
-
-**SEMUA field yang Anda sebutkan DITAMPILKAN** kepada user, namun dengan strategi yang berbeda:
-
-1. **Field raw langsung** ditampilkan di halaman upload (saat ekstraksi) dan halaman detail (di section File Info)
-2. **Field yang ditransformasi** ditampilkan sebagai field metadata final di halaman detail
-3. **Hanya `layerName`** yang tidak ditampilkan langsung - hanya digunakan untuk inferensi otomatis
-
-Sistem ini memberikan transparansi penuh kepada user tentang apa yang diekstrak dari file mereka, sambil tetap menyediakan metadata yang sudah diinferensikan secara otomatis.

@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jakarta",
+        "province": "DKI Jakarta",
+        "population": 10500000,
+        "type": "capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [106.8456, -6.2088]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bandung",
+        "province": "Jawa Barat",
+        "population": 2500000,
+        "type": "city"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [107.6098, -6.9175]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Surabaya",
+        "province": "Jawa Timur",
+        "population": 3000000,
+        "type": "city"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [112.7378, -7.2575]
+      }
+    }
+  ],
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  }
+}

@@ -54,31 +54,57 @@ export interface OgrInfoResult {
 }
 
 /**
- * Extract geospatial information from file using ogrinfo or fallback methods
+ * Extract geospatial information from file or directory using ogrinfo or fallback methods
  */
-export async function extractGeospatialInfo(filePath: string): Promise<OgrInfoResult> {
+export async function extractGeospatialInfo(inputPath: string): Promise<OgrInfoResult> {
   try {
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
+    // Check if path exists
+    if (!fs.existsSync(inputPath)) {
       return {
         success: false,
-        error: 'File tidak ditemukan'
+        error: 'File atau direktori tidak ditemukan'
       }
     }
 
-    const fileExt = path.extname(filePath).toLowerCase()
+    const stats = fs.statSync(inputPath)
+    let targetFilePath = inputPath
+    let fileExt = ''
+
+    // If it's a directory, look for Shapefile components
+    if (stats.isDirectory()) {
+      console.log('Processing directory for Shapefile components:', inputPath)
+
+      // Look for .shp file in the directory
+      const files = fs.readdirSync(inputPath)
+      const shpFile = files.find(file => file.toLowerCase().endsWith('.shp'))
+
+      if (!shpFile) {
+        return {
+          success: false,
+          error: 'Tidak ditemukan file .shp dalam direktori'
+        }
+      }
+
+      targetFilePath = path.join(inputPath, shpFile)
+      fileExt = '.shp'
+      console.log('Found Shapefile:', targetFilePath)
+    } else {
+      // It's a file
+      fileExt = path.extname(inputPath).toLowerCase()
+    }
+
     let extractedInfo: GeospatialInfo
 
     // Use ogrinfo if available
     if (ogrinfoAvailable) {
-      const result = await extractWithOgrInfo(filePath, fileExt)
+      const result = await extractWithOgrInfo(targetFilePath, fileExt)
       if (!result.success || !result.data) {
         return result
       }
       extractedInfo = result.data
     } else {
       // Use fallback methods
-      const result = await extractWithFallback(filePath, fileExt)
+      const result = await extractWithFallback(targetFilePath, fileExt)
       if (!result.success || !result.data) {
         return result
       }
@@ -86,7 +112,7 @@ export async function extractGeospatialInfo(filePath: string): Promise<OgrInfoRe
     }
 
     // Infer additional metadata fields
-    const enhancedInfo = inferMetadataFields(extractedInfo, filePath)
+    const enhancedInfo = inferMetadataFields(extractedInfo, targetFilePath)
 
     return {
       success: true,

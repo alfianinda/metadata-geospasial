@@ -443,7 +443,7 @@ export default function Home() {
                   <li>• Periode: 2010 - 2023</li>
                   <li>• Frekuensi Update: Tahunan</li>
                   <li>• Tanggal Pembaruan Terakhir: 2023-12-31</li>
-                  <li>• Sumber: BPS (Badan Pusat Statistik)</li>
+                  <li>• Sumber: DKB (Data dan Kecerdasan Buatan) Otorita Ibu Kota Nusantara</li>
                   <li>• Cakupan: Seluruh Indonesia</li>
                 </ul>
               </div>

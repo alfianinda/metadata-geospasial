@@ -502,41 +502,73 @@ const metadataEntities = [
     required: false,
     children: [
       {
-        id: 'originalFileName',
-        name: 'originalFileName',
-        description: 'Nama file asli',
-        required: false,
-        example: 'data.shp',
-        standard: 'File Info'
-      },
-      {
-        id: 'fileSize',
-        name: 'fileSize',
-        description: 'Ukuran file',
-        required: false,
-        example: '10 MB',
-        standard: 'File Info'
-      },
-      {
         id: 'featureCount',
-        name: 'featureCount',
-        description: 'Jumlah fitur',
+        name: 'Feature Count',
+        description: 'Jumlah fitur geospasial dalam file',
         required: false,
         example: '1000',
         standard: 'File Info'
       },
       {
         id: 'geometryType',
-        name: 'geometryType',
-        description: 'Tipe geometri',
+        name: 'Geometry Type',
+        description: 'Tipe bentuk geometri (Point, Line, Polygon)',
         required: false,
         example: 'Point, LineString, Polygon',
         standard: 'File Info'
       },
       {
+        id: 'boundingBox',
+        name: 'Bounding Box',
+        description: 'Batas geografis dataset',
+        required: false,
+        example: '95.0°E, 141.0°E, -11.0°N, 6.0°N',
+        standard: 'File Info'
+      },
+      {
+        id: 'coordinateSystem',
+        name: 'Coordinate System',
+        description: 'Sistem referensi spasial yang digunakan',
+        required: false,
+        example: 'EPSG:4326 (WGS84)',
+        standard: 'File Info'
+      },
+      {
+        id: 'attributeInfo',
+        name: 'Attribute Info',
+        description: 'Informasi detail atribut dan tipe datanya',
+        required: false,
+        example: 'nama: string, kode: integer',
+        standard: 'File Info'
+      },
+      {
+        id: 'layerName',
+        name: 'Layer Name',
+        description: 'Nama layer atau dataset',
+        required: false,
+        example: 'administrasi_kabupaten',
+        standard: 'File Info'
+      },
+      {
+        id: 'fileSize',
+        name: 'File Size',
+        description: 'Ukuran file yang diupload',
+        required: false,
+        example: '10 MB',
+        standard: 'File Info'
+      },
+      {
+        id: 'originalFileName',
+        name: 'Original File Name',
+        description: 'Nama asli file yang diupload',
+        required: false,
+        example: 'data.shp',
+        standard: 'File Info'
+      },
+      {
         id: 'dataFormat',
-        name: 'dataFormat',
-        description: 'Format data',
+        name: 'Data Format',
+        description: 'Format data geospasial',
         required: false,
         example: 'GeoJSON, Shapefile, GeoTIFF',
         standard: 'File Info'
@@ -1101,6 +1133,28 @@ export default function MetadataDetail() {
 
         {activeTab === 'metadata' ? (
           <>
+            {/* Section Navigation Tabs */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2 p-4 bg-white rounded-lg border border-gray-200">
+                {metadataEntities.map((entity) => (
+                  <button
+                    type="button"
+                    key={entity.id}
+                    onClick={() => {
+                      setActiveSection(entity.id)
+                    }}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeSection === entity.id
+                        ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                        : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    {entity.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Render fields based on active section */}
             {activeSection === 'root' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1490,40 +1544,156 @@ export default function MetadataDetail() {
             )}
 
             {activeSection === 'fileInfo' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Original File Name
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.originalFileName || 'Not specified'}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    File Size
-                  </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.fileSize ? `${(metadata.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not specified'}</div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Feature Count */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Feature Count
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.featureCount ? metadata.featureCount.toLocaleString() : 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.featureCount ? metadata.featureCount.toLocaleString() : 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Number of geospatial features in the file</p>
                 </div>
+
+                {/* Geometry Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Geometry Type
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.geometryType || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.geometryType || 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Type of geometric shapes (Point, Line, Polygon)</p>
                 </div>
+
+                {/* Bounding Box (Extent) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bounding Box (Extent)
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.geographicExtent || metadata.boundingBox ? JSON.stringify(metadata.boundingBox || metadata.geographicExtent, null, 2) : 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Geographical boundaries of the dataset</p>
+                </div>
+
+                {/* Coordinate System */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Coordinate System
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.coordinateSystem || 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Spatial reference system used</p>
+                </div>
+
+                {/* Attribute Information */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Attribute Information
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200 max-h-32 overflow-y-auto">
+                    {(() => {
+                      if (metadata.attributeInfo) {
+                        if (typeof metadata.attributeInfo === 'string') {
+                          try {
+                            const parsed = JSON.parse(metadata.attributeInfo);
+                            return JSON.stringify(parsed, null, 2);
+                          } catch {
+                            return metadata.attributeInfo;
+                          }
+                        } else if (typeof metadata.attributeInfo === 'object') {
+                          return JSON.stringify(metadata.attributeInfo, null, 2);
+                        }
+                      }
+                      return 'Not available';
+                    })()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Detailed information about data attributes and their types</p>
+                </div>
+
+                {/* Layer Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Layer Name
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.hierarchyLevelName || metadata.title || 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Name of the data layer or dataset</p>
+                </div>
+
+                {/* File Size */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    File Size
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.fileSize ? `${(metadata.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Size of the uploaded file</p>
+                </div>
+
+                {/* Original File Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Original File Name
+                  </label>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.originalFileName || 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Original name of the uploaded file</p>
+                </div>
+
+                {/* Data Format */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Data Format
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{metadata.dataFormat || 'Not specified'}</div>
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                    {metadata.dataFormat || 'Not available'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Format of the geospatial data file</p>
                 </div>
               </div>
             )}
 
+            {/* Section Navigation Buttons */}
+            <div className="flex justify-between items-center border-t border-gray-200 pt-4 pb-4 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  const currentIndex = metadataEntities.findIndex(e => e.id === activeSection)
+                  if (currentIndex > 0) {
+                    setActiveSection(metadataEntities[currentIndex - 1].id)
+                  }
+                }}
+                disabled={metadataEntities.findIndex(e => e.id === activeSection) === 0}
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+
+              <span className="text-sm text-gray-600">
+                {metadataEntities.findIndex(e => e.id === activeSection) + 1} of {metadataEntities.length}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const currentIndex = metadataEntities.findIndex(e => e.id === activeSection)
+                  if (currentIndex < metadataEntities.length - 1) {
+                    setActiveSection(metadataEntities[currentIndex + 1].id)
+                  }
+                }}
+                disabled={metadataEntities.findIndex(e => e.id === activeSection) === metadataEntities.length - 1}
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
+            </div>
 
             {/* Associated Files */}
             <div className="border-t border-gray-200 pt-4">
