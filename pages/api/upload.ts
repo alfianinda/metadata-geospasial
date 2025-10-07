@@ -2,6 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { withAuth } from '@/lib/middleware'
 import { prisma } from '@/lib/db'
 import formidable from 'formidable'
+import * as yauzl from 'yauzl'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as os from 'os'
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -90,7 +94,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         distributionFormat: metadataFields.distributionFormat || null,
         distributor: metadataFields.distributor || null,
         onlineResource: metadataFields.onlineResource || null,
-        transferOptions: metadataFields.transferOptions ? JSON.parse(metadataFields.transferOptions) : null,
+        transferOptions: metadataFields.transferOptions ? { description: metadataFields.transferOptions } : undefined,
 
         // Data Quality
         scope: metadataFields.scope,
@@ -111,7 +115,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         // Content Information
         contentType: metadataFields.contentType || null,
-        attributeInfo: metadataFields.attributeDescription ? JSON.parse(metadataFields.attributeDescription) : null,
+        attributeInfo: metadataFields.attributeDescription ? { description: metadataFields.attributeDescription } : undefined,
 
         // Spatial Representation
         spatialRepresentationType: metadataFields.spatialRepresentationType,
@@ -165,6 +169,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       })
 
       console.log(`Created ${fileRecords.length} file records`)
+
+      // Cleanup extracted temporary files
+      files.forEach(file => {
+        if (file.cleanup) {
+          file.cleanup()
+        }
+      })
     }
 
     res.status(201).json({
@@ -190,7 +201,7 @@ async function parseFormData(req: NextApiRequest): Promise<{ fields: Record<stri
   return new Promise((resolve, reject) => {
     const form = formidable({ multiples: true })
 
-    form.parse(req, (err: any, fields: any, files: any) => {
+    form.parse(req, async (err: any, fields: any, files: any) => {
       if (err) {
         reject(err)
         return
@@ -211,12 +222,181 @@ async function parseFormData(req: NextApiRequest): Promise<{ fields: Record<stri
         filesArray = Array.isArray(files.file) ? files.file : [files.file]
       }
 
+      // Check for compressed files and extract them
+      const processedFiles: any[] = []
+      for (const file of filesArray) {
+        const fileName = file.originalFilename || file.name || ''
+        console.log(`Processing file: ${fileName}, filepath: ${file.filepath}`)
+        const isZip = fileName.toLowerCase().endsWith('.zip')
+        const isRar = fileName.toLowerCase().endsWith('.rar')
+
+        if (isZip) {
+          try {
+            console.log(`Detected ZIP file: ${fileName}, attempting extraction...`)
+            const extractedFiles = await extractZip(file.filepath)
+            console.log(`Successfully extracted ${extractedFiles.length} files from ZIP:`, extractedFiles.map(f => f.originalFilename))
+            processedFiles.push(...extractedFiles)
+          } catch (error) {
+            console.error(`Failed to extract ZIP ${fileName}:`, error)
+            // If extraction fails, keep the original file
+            processedFiles.push(file)
+          }
+        } else if (isRar) {
+          console.log(`RAR file detected: ${fileName} - RAR extraction not supported in serverless environment`)
+          console.log(`Storing RAR file as-is. For automatic metadata extraction, please use ZIP format.`)
+          // Keep the original RAR file - no extraction
+          processedFiles.push(file)
+        } else {
+          console.log(`Regular file: ${fileName}`)
+          processedFiles.push(file)
+        }
+      }
+
       resolve({
         fields: flattenedFields,
-        files: filesArray
+        files: processedFiles
       })
     })
   })
+}
+
+// Define interface for extracted file
+interface ExtractedFile {
+  filepath: string
+  originalFilename: string
+  mimetype: string
+  size: number
+  cleanup: () => void
+}
+
+// Helper function to extract ZIP files
+async function extractZip(zipPath: string): Promise<ExtractedFile[]> {
+  return new Promise((resolve, reject) => {
+    console.log(`Opening ZIP file: ${zipPath}`)
+
+    // Check if file exists
+    if (!fs.existsSync(zipPath)) {
+      reject(new Error(`ZIP file does not exist: ${zipPath}`))
+      return
+    }
+
+    const extractedFiles: ExtractedFile[] = []
+
+    yauzl.open(zipPath, { lazyEntries: true }, (err: any, zipfile: any) => {
+      if (err) {
+        console.error('Error opening ZIP file:', err)
+        reject(err)
+        return
+      }
+
+      console.log('ZIP file opened successfully')
+
+      zipfile.readEntry()
+      zipfile.on('entry', (entry: any) => {
+        console.log(`Processing ZIP entry: ${entry.fileName}`)
+
+        // Skip directories and macOS metadata
+        if (entry.fileName.endsWith('/') || entry.fileName.startsWith('__MACOSX/') || entry.fileName.includes('.DS_Store')) {
+          console.log(`Skipping entry: ${entry.fileName}`)
+          zipfile.readEntry()
+          return
+        }
+
+        // Only extract geospatial files
+        const fileName = entry.fileName.toLowerCase()
+        const isGeospatialFile = fileName.endsWith('.shp') ||
+                                fileName.endsWith('.shx') ||
+                                fileName.endsWith('.dbf') ||
+                                fileName.endsWith('.prj') ||
+                                fileName.endsWith('.cpg') ||
+                                fileName.endsWith('.geojson') ||
+                                fileName.endsWith('.json')
+
+        if (!isGeospatialFile) {
+          console.log(`Skipping non-geospatial file: ${entry.fileName}`)
+          zipfile.readEntry()
+          return
+        }
+
+        console.log(`Extracting geospatial file: ${entry.fileName}`)
+
+        zipfile.openReadStream(entry, (err: any, readStream: any) => {
+          if (err) {
+            console.warn(`Error opening read stream for ${entry.fileName}:`, err)
+            zipfile.readEntry()
+            return
+          }
+
+          // Create temporary file
+          const tempDir = os.tmpdir()
+          const tempFileName = `extracted_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${path.basename(entry.fileName)}`
+          const tempFilePath = path.join(tempDir, tempFileName)
+
+          console.log(`Creating temp file: ${tempFilePath}`)
+
+          const writeStream = fs.createWriteStream(tempFilePath)
+          readStream.pipe(writeStream)
+
+          writeStream.on('finish', () => {
+            console.log(`Successfully extracted: ${entry.fileName} to ${tempFilePath}`)
+
+            // Create file object similar to formidable's format
+            const extractedFile: ExtractedFile = {
+              filepath: tempFilePath,
+              originalFilename: entry.fileName,
+              mimetype: getMimeType(entry.fileName),
+              size: entry.uncompressedSize,
+              // Add cleanup method
+              cleanup: () => {
+                try {
+                  if (fs.existsSync(tempFilePath)) {
+                    fs.unlinkSync(tempFilePath)
+                    console.log(`Cleaned up temp file: ${tempFilePath}`)
+                  }
+                } catch (e) {
+                  console.warn(`Failed to cleanup temp file ${tempFilePath}:`, e)
+                }
+              }
+            }
+
+            extractedFiles.push(extractedFile)
+            zipfile.readEntry()
+          })
+
+          writeStream.on('error', (error: any) => {
+            console.error(`Error writing extracted file ${entry.fileName}:`, error)
+            zipfile.readEntry()
+          })
+        })
+      })
+
+      zipfile.on('end', () => {
+        console.log(`ZIP extraction completed. Total extracted files: ${extractedFiles.length}`)
+        resolve(extractedFiles)
+      })
+
+      zipfile.on('error', (error: any) => {
+        console.error('ZIP file error:', error)
+        reject(error)
+      })
+    })
+  })
+}
+
+
+// Helper function to get MIME type
+function getMimeType(filename: string): string {
+  const ext = filename.toLowerCase().split('.').pop()
+  const mimeTypes: Record<string, string> = {
+    'shp': 'application/octet-stream',
+    'shx': 'application/octet-stream',
+    'dbf': 'application/octet-stream',
+    'prj': 'application/octet-stream',
+    'cpg': 'application/octet-stream',
+    'geojson': 'application/json',
+    'json': 'application/json'
+  }
+  return mimeTypes[ext || ''] || 'application/octet-stream'
 }
 
 export default withAuth(handler)

@@ -992,9 +992,10 @@ export default function Upload() {
         name.endsWith('.aih')
       )
       const hasGeoJSON = fileNames.some(name => name.endsWith('.geojson') || name.endsWith('.json'))
-      const hasCompressed = fileNames.some(name => name.endsWith('.zip') || name.endsWith('.rar'))
+      const hasZip = fileNames.some(name => name.endsWith('.zip'))
+      const hasRar = fileNames.some(name => name.endsWith('.rar'))
 
-      const isSupportedFormat = hasShapefileComponents || hasGeoJSON || hasCompressed
+      const isSupportedFormat = hasShapefileComponents || hasGeoJSON || hasZip || hasRar
 
       if (!isSupportedFormat) {
         setError('⚠️ Format file ini tidak didukung untuk ekstraksi otomatis. Auto-Extracted Information from File tidak akan muncul. Sistem akan mencoba ekstraksi server-side jika tersedia, atau Anda perlu mengisi metadata secara manual.')
@@ -1004,12 +1005,25 @@ export default function Upload() {
         return
       }
 
+      // Special handling for RAR files
+      if (hasRar) {
+        setError('ℹ️ File RAR terdeteksi. RAR didukung untuk upload tapi tidak dapat diekstrak otomatis. Metadata perlu diisi manual. Untuk ekstraksi otomatis, gunakan format ZIP.')
+        setShowErrorModal(true)
+      }
+
       // Extract geospatial information using client-side processing
       const firstFile = selectedFiles[0]
       try {
         console.log('=== CLIENT-SIDE EXTRACTION START ===')
         console.log('All selected files:', Array.from(selectedFiles).map(f => f.name))
         console.log('First file (selectedFiles[0]):', firstFile.name)
+
+        // Check if we have RAR files - these can still attempt client-side extraction
+        // but will likely fail and fall back to server-side
+        const hasRarFiles = Array.from(selectedFiles).some(f => f.name.toLowerCase().endsWith('.rar'));
+        if (hasRarFiles) {
+          console.log('📦 RAR files detected - attempting client-side extraction (may fail and use server-side fallback)');
+        }
 
         // For Shapefile components, ALWAYS prioritize .shp file as the main file if it exists
         let filesToExtract: File | File[] = firstFile;
@@ -1602,8 +1616,12 @@ export default function Upload() {
                         <span className="text-gray-600">- pilih minimal file utama (.shp, .shx, .dbf) + file pendukung opsional (.prj, .cpg, .sbn, .sbx)</span>
                       </div>
                       <div className="justify-center space-x-2">
-                        <span className="font-medium text-blue-600">• ZIP/RAR</span>
+                        <span className="font-medium text-green-600">• ZIP</span>
                         <span className="text-gray-600">- Shapefile terkompresi dengan ekstraksi otomatis</span>
+                      </div>
+                      <div className="justify-center space-x-2">
+                        <span className="font-medium text-blue-600">• RAR</span>
+                        <span className="text-gray-600">- Didukung untuk upload, metadata manual</span>
                       </div>
                       <div className="justify-center space-x-2">
                         <span className="font-medium text-orange-600">• 10MB Limit</span>
