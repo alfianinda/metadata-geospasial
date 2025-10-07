@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build --turbopack",
+    "postbuild": "prisma db push --accept-data-loss && npm run seed",
+    "seed": "tsx prisma/seed.ts",
     "start": "next start",
     "lint": "eslint"
   },
@@ -14,12 +16,14 @@
   "dependencies": {
     "@prisma/client": "^6.15.0",
     "@turf/turf": "^6.5.0",
+    "@types/formidable": "^3.4.5",
     "@types/nodemailer": "^7.0.1",
     "@types/shapefile": "^0.6.4",
     "adm-zip": "^0.5.16",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "express-rate-limit": "^8.1.0",
+    "formidable": "^3.5.4",
     "geotiff": "^2.0.7",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
