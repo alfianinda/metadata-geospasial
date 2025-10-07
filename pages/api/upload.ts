@@ -145,11 +145,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Handle file uploads - store file info in database
     if (files && files.length > 0) {
       const fileRecords = files.map(file => ({
-        filename: file.filename,
-        originalName: file.originalFilename,
+        filename: file.originalFilename || file.filename || 'unknown',
+        originalName: file.originalFilename || file.filename || 'unknown',
         mimetype: file.mimetype,
         size: file.size,
-        path: file.filepath, // In Vercel, this might be temporary
+        path: file.filepath || file.path, // In Vercel, this might be temporary
         url: null, // For now, no URL since files aren't stored permanently
         metadataId: metadata.id
       }))
