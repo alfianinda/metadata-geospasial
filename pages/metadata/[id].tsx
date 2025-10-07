@@ -1408,19 +1408,28 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Attribute Description
                   </label>
-                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded">{(() => {
+                  <div className="text-gray-700 text-sm bg-gray-50 p-2 rounded whitespace-pre-line">{(() => {
                     if (metadata.attributeInfo) {
                       if (typeof metadata.attributeInfo === 'string') {
                         try {
                           const parsed = JSON.parse(metadata.attributeInfo);
-                          return parsed.description || metadata.attributeInfo;
+                          if (parsed.description) {
+                            const description = parsed.description.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+                            return description.replace(/^description:\s*/gi, '').trim();
+                          }
+                          // Format concatenated attributes with line breaks
+                          return metadata.attributeInfo.replace(/(\w+: \w+ - [^,]+)(?=\w+: \w+ -)/g, '$1\n');
                         } catch {
-                          return metadata.attributeInfo;
+                          // Format concatenated attributes with line breaks
+                          return metadata.attributeInfo.replace(/(\w+: \w+ - [^,]+)(?=\w+: \w+ -)/g, '$1\n');
                         }
-                      } else if (typeof metadata.attributeInfo === 'object' && metadata.attributeInfo.description) {
-                        return metadata.attributeInfo.description;
-                      } else if (typeof metadata.attributeInfo === 'object') {
-                        return JSON.stringify(metadata.attributeInfo);
+                      } else if (typeof metadata.attributeInfo === 'object' && metadata.attributeInfo !== null) {
+                        if (metadata.attributeInfo.description) {
+                          const description = String(metadata.attributeInfo.description).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+                          return description.replace(/^description:\s*/gi, '').trim();
+                        } else {
+                          return JSON.stringify(metadata.attributeInfo, null, 2);
+                        }
                       }
                     }
                     return 'Not specified';
@@ -1581,7 +1590,27 @@ export default function MetadataDetail() {
                     Bounding Box (Extent)
                   </label>
                   <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200">
-                    {metadata.geographicExtent || metadata.boundingBox ? JSON.stringify(metadata.boundingBox || metadata.geographicExtent, null, 2) : 'Not available'}
+                    {(() => {
+                      const bbox = metadata.geographicExtent || metadata.boundingBox;
+                      if (bbox) {
+                        if (typeof bbox === 'string') {
+                          try {
+                            const parsed = JSON.parse(bbox);
+                            return Object.entries(parsed)
+                              .map(([key, value]) => `${key}: ${value}`)
+                              .join('\n');
+                          } catch {
+                            return bbox;
+                          }
+                        } else if (typeof bbox === 'object' && bbox !== null) {
+                          return Object.entries(bbox)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join('\n');
+                        }
+                        return String(bbox);
+                      }
+                      return 'Not available';
+                    })()}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Geographical boundaries of the dataset</p>
                 </div>
@@ -1602,18 +1631,54 @@ export default function MetadataDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Attribute Information
                   </label>
-                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200 max-h-32 overflow-y-auto">
+                  <div className="text-gray-700 text-sm bg-blue-50 p-2 rounded border border-blue-200 max-h-32 overflow-y-auto whitespace-pre-line">
                     {(() => {
                       if (metadata.attributeInfo) {
                         if (typeof metadata.attributeInfo === 'string') {
                           try {
                             const parsed = JSON.parse(metadata.attributeInfo);
+                            // If it has a description field, display it nicely
+                            if (parsed.description) {
+                              const description = parsed.description.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+                              // Remove all "description:" prefixes (case insensitive, with optional whitespace)
+                              return description.replace(/^description:\s*/gi, '').trim();
+                            }
+                            // If it's an object with attributes, format it nicely
+                            if (typeof parsed === 'object' && parsed !== null) {
+                              const attributes = [];
+                              for (const [key, value] of Object.entries(parsed)) {
+                                if (value && typeof value === 'object' && 'type' in value && 'description' in value) {
+                                  attributes.push(`${key}: ${String(value.type)} - ${String(value.description)}`);
+                                } else {
+                                  attributes.push(`${key}: ${String(value)}`);
+                                }
+                              }
+                              return attributes.join('\n');
+                            }
                             return JSON.stringify(parsed, null, 2);
                           } catch {
-                            return metadata.attributeInfo;
+                            // If it's a concatenated string, format it with line breaks
+                            return metadata.attributeInfo.replace(/(\w+: \w+ - [^,]+)(?=\w+: \w+ -)/g, '$1\n');
                           }
-                        } else if (typeof metadata.attributeInfo === 'object') {
-                          return JSON.stringify(metadata.attributeInfo, null, 2);
+                        } else if (typeof metadata.attributeInfo === 'object' && metadata.attributeInfo !== null) {
+                          // Handle object format
+                          if (metadata.attributeInfo.description) {
+                            // If it's an object with description field, display the description
+                            const description = String(metadata.attributeInfo.description).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+                            return description.replace(/^description:\s*/gi, '').trim();
+                          } else {
+                            // Handle object format with attributes
+                            const attributes = [];
+                            for (const [key, value] of Object.entries(metadata.attributeInfo)) {
+                              if (value && typeof value === 'object' && value !== null && 'type' in value && 'description' in value) {
+                                const attrValue = value as { type: unknown; description: unknown };
+                                attributes.push(`${key}: ${String(attrValue.type)} - ${String(attrValue.description)}`);
+                              } else {
+                                attributes.push(`${key}: ${String(value)}`);
+                              }
+                            }
+                            return attributes.join('\n');
+                          }
                         }
                       }
                       return 'Not available';

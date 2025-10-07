@@ -49,11 +49,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       if (validSortFields.includes(sortBy) && validSortOrders.includes(sortOrder)) {
         if (sortBy === 'title') {
-          // For title sorting, use case-insensitive collation
-          orderBy = [
-            { title: { sort: 'asc', nulls: 'last' } },
-            { createdAt: 'desc' }
-          ]
+          // For title sorting, use simple ascending order (SQLite compatible)
+          orderBy = { title: sortOrder }
         } else {
           orderBy = { [sortBy]: sortOrder }
         }
@@ -70,43 +67,87 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const dateTo = req.query.dateTo as string || ''
 
       // Build where clause with filters
-      const filters: any = { ...whereClause }
+      let filters: any
 
+      // Handle status filter first, as it affects the base whereClause
+      if (status) {
+        // Filter by actual status values (completed, ongoing, planned, deprecated)
+        if (decoded && decoded.role === 'ADMIN') {
+          // Admin can see all metadata with the specified status
+          filters = { status: status }
+        } else if (decoded) {
+          // Regular users can see their own metadata or published metadata with the specified status
+          filters = {
+            AND: [
+              { status: status },
+              {
+                OR: [
+                  { userId: decoded.userId },
+                  { isPublished: true }
+                ]
+              }
+            ]
+          }
+        } else {
+          // Public users can only see published metadata with the specified status
+          filters = {
+            AND: [
+              { status: status },
+              { isPublished: true }
+            ]
+          }
+        }
+      } else {
+        // No status filter, use the base whereClause
+        filters = { ...whereClause }
+      }
+
+      // Apply search filter
       if (search) {
-        filters.OR = [
-          { title: { contains: search } },
-          { abstract: { contains: search } },
-          { keywords: { contains: search } }
-        ]
-      }
+        const searchCondition = {
+          OR: [
+            { title: { contains: search } },
+            { abstract: { contains: search } },
+            { keywords: { contains: search } }
+          ]
+        }
 
-      if (category) {
-        filters.topicCategory = category
-      }
-
-      if (dataType) {
-        if (dataType === 'vector') {
-          filters.dataFormat = { in: ['GeoJSON', 'Shapefile'] }
-        } else if (dataType === 'raster') {
-          filters.dataFormat = { in: ['GeoTIFF', 'TIFF'] }
+        if (filters.AND) {
+          filters.AND.push(searchCondition)
+        } else if (Object.keys(filters).length > 0) {
+          filters = {
+            AND: [filters, searchCondition]
+          }
+        } else {
+          filters = searchCondition
         }
       }
 
-      if (format) {
-        filters.dataFormat = format
+      // Apply other filters
+      const additionalFilters: any = {}
+
+      if (category) {
+        additionalFilters.topicCategory = category
       }
 
-      if (status) {
-        if (decoded) {
-          // Only apply status filter for authenticated users
-          if (status === 'published') {
-            filters.isPublished = true
-          } else if (status === 'draft') {
-            filters.isPublished = false
+      if (dataType) {
+        additionalFilters.spatialRepresentationType = dataType
+      }
+
+      if (format) {
+        additionalFilters.dataFormat = format
+      }
+
+      // Combine additional filters
+      if (Object.keys(additionalFilters).length > 0) {
+        if (filters.AND) {
+          filters.AND.push(additionalFilters)
+        } else if (Object.keys(filters).length > 0) {
+          filters = {
+            AND: [filters, additionalFilters]
           }
         } else {
-          // For public users, ignore status filter since they can only see published content
-          // Don't add any status filter to avoid conflicts with base isPublished: true
+          filters = additionalFilters
         }
       }
 

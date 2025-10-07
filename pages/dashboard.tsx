@@ -321,6 +321,16 @@ export default function Dashboard() {
 
   const handleFilterChange = (key: string, value: string) => {
     setPendingFilters(prev => ({ ...prev, [key]: value }))
+    // Also update filters immediately for instant filtering
+    setFilters(prev => ({ ...prev, [key]: value }))
+    setCurrentPage(1)
+    // Debounce the API call to avoid too many requests
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    searchTimeout.current = setTimeout(() => {
+      fetchMetadata(1, sortBy, sortOrder)
+    }, 300)
   }
 
   const applyFilters = async () => {
@@ -336,6 +346,7 @@ export default function Dashboard() {
         searchTimeout.current = null
       }
 
+      // Apply pending filters and fetch data immediately
       setFilters(pendingFilters)
       setCurrentPage(1)
       await fetchMetadata(1, sortBy, sortOrder)
@@ -351,12 +362,13 @@ export default function Dashboard() {
   }
 
   const clearFilters = () => {
-    // Clear any pending search timeout
+    // Clear any pending search timeout to prevent conflicts
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current)
       searchTimeout.current = null
     }
 
+    // Immediately clear all states
     setSearchQuery('')
     const emptyFilters = {
       category: '',
@@ -370,7 +382,53 @@ export default function Dashboard() {
     setFilters(emptyFilters)
     setPendingFilters(emptyFilters)
     setCurrentPage(1)
-    fetchMetadata(1, sortBy, sortOrder)
+
+    // Force immediate fetch without any debounce or delay
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/')
+      return
+    }
+
+    const params = new URLSearchParams({
+      page: '1',
+      limit: '9',
+      sortBy: sortBy,
+      sortOrder: sortOrder
+    })
+
+    // No search or filter parameters - show all data
+    fetch(`/api/metadata?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json()
+      } else if (response.status === 401) {
+        setError('Sesi login Anda telah berakhir. Silakan login kembali.')
+        localStorage.removeItem('token')
+        router.push('/')
+        return null
+      } else {
+        throw new Error('Failed to fetch metadata')
+      }
+    })
+    .then(data => {
+      if (data) {
+        setMetadata(data.data)
+        setPagination(data.pagination)
+        setError(null)
+      }
+    })
+    .catch(error => {
+      console.error('Error clearing filters:', error)
+      setError('Terjadi kesalahan saat menghapus filter')
+    })
+    .finally(() => {
+      setLoading(false)
+    })
   }
 
   const handlePublishToggle = async (id: string, currentStatus: boolean) => {
@@ -548,10 +606,19 @@ export default function Dashboard() {
                   >
                     <option value="">Semua Kategori</option>
                     <option value="boundaries">Boundaries</option>
+                    <option value="biota">Biota</option>
                     <option value="climatology">Climatology</option>
+                    <option value="economy">Economy</option>
+                    <option value="elevation">Elevation</option>
                     <option value="environment">Environment</option>
+                    <option value="geoscientific">Geoscientific</option>
+                    <option value="health">Health</option>
                     <option value="imagery">Imagery</option>
+                    <option value="oceans">Oceans</option>
+                    <option value="planning">Planning</option>
+                    <option value="society">Society</option>
                     <option value="transportation">Transportation</option>
+                    <option value="utilities">Utilities</option>
                   </select>
                 </div>
 
@@ -564,7 +631,11 @@ export default function Dashboard() {
                   >
                     <option value="">Semua Tipe</option>
                     <option value="vector">Vector</option>
-                    <option value="raster">Raster</option>
+                    <option value="grid">Grid</option>
+                    <option value="textTable">Text Table</option>
+                    <option value="tin">TIN</option>
+                    <option value="stereoModel">Stereo Model</option>
+                    <option value="video">Video</option>
                   </select>
                 </div>
 

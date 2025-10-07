@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '../../components/Navbar'
+import jwt from 'jsonwebtoken'
 
 interface Metadata {
   id: string
@@ -38,37 +40,224 @@ interface MetadataResponse {
   pagination: PaginationInfo
 }
 
+interface User {
+  userId: string
+  email: string
+  name: string
+  role: string
+}
+
 export default function MetadataList() {
   const [metadata, setMetadata] = useState<Metadata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [user, setUser] = useState<User | null>(null)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState({
+    category: '',
+    dataType: '',
+    format: '',
+    source: '',
+    status: '',
+    dateFrom: '',
+    dateTo: ''
+  })
+  const [showFilters, setShowFilters] = useState(false)
+  const [applyingFilters, setApplyingFilters] = useState(false)
+  const [isApplying, setIsApplying] = useState(false)
+  const [pendingFilters, setPendingFilters] = useState({
+    category: '',
+    dataType: '',
+    format: '',
+    source: '',
+    status: '',
+    dateFrom: '',
+    dateTo: ''
+  })
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    fetchMetadata()
+    // Get user info from token
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        const decoded = jwt.decode(token) as User
+        setUser(decoded)
+      } catch (error) {
+        console.error('Error decoding token:', error)
+      }
+    }
+
+    checkAuthAndFetchMetadata()
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current)
+      }
+    }
   }, [])
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-    setCurrentPage(1)
-    fetchMetadata(1)
+  const checkAuthAndFetchMetadata = async () => {
+    await fetchMetadata()
   }
 
-  const handleFilterChange = (newFilter: 'all' | 'published' | 'draft') => {
-    setFilter(newFilter)
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
     setCurrentPage(1)
-    fetchMetadata(1)
+    // Debounce search to avoid too many API calls
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    searchTimeout.current = setTimeout(() => {
+      fetchMetadata(1, sortBy, sortOrder)
+    }, 300)
+  }
+
+  const handleFilterChange = (key: string, value: string) => {
+    setPendingFilters(prev => ({ ...prev, [key]: value }))
+    // Don't apply filters immediately - wait for user to click "Terapkan Filter"
+  }
+
+  const applyFilters = async () => {
+    if (isApplying) return // Prevent multiple clicks
+
+    setIsApplying(true)
+    setApplyingFilters(true)
+
+    try {
+      // Clear any pending search timeout
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current)
+        searchTimeout.current = null
+      }
+
+      // Apply pending filters and fetch data immediately
+      setFilters(pendingFilters)
+      setCurrentPage(1)
+      await fetchMetadataWithFilters(pendingFilters, 1, sortBy, sortOrder)
+
+      // Add a small delay to ensure UI updates before re-enabling
+      await new Promise(resolve => setTimeout(resolve, 200))
+    } catch (error) {
+      console.error('Error applying filters:', error)
+    } finally {
+      setIsApplying(false)
+      setApplyingFilters(false)
+    }
+  }
+
+
+  const clearFilters = () => {
+    // Clear any pending search timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+      searchTimeout.current = null
+    }
+
+    // Immediately clear all states
+    setSearchQuery('')
+    const emptyFilters = {
+      category: '',
+      dataType: '',
+      format: '',
+      source: '',
+      status: '',
+      dateFrom: '',
+      dateTo: ''
+    }
+    setFilters(emptyFilters)
+    setPendingFilters(emptyFilters)
+    setCurrentPage(1)
+
+    // Force immediate fetch without any debounce or delay
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/')
+      return
+    }
+
+    const params = new URLSearchParams({
+      page: '1',
+      limit: '12',
+      sortBy: sortBy,
+      sortOrder: sortOrder
+    })
+
+    // No search or filter parameters - show all data
+    fetch(`/api/metadata?${params}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json()
+      } else if (response.status === 401) {
+        // If unauthorized, try without token (public access)
+        const publicResponse = fetch(`/api/metadata?${params}`)
+        return publicResponse
+      } else {
+        throw new Error('Failed to fetch metadata')
+      }
+    })
+    .then(data => {
+      if (data && data.ok) {
+        return data.json()
+      } else if (data) {
+        setMetadata(data.data)
+        setPagination(data.pagination)
+        setError(null)
+      }
+    })
+    .then(publicData => {
+      if (publicData) {
+        setMetadata(publicData.data)
+        setPagination(publicData.pagination)
+        setError(null)
+      }
+    })
+    .catch(error => {
+      console.error('Error clearing filters:', error)
+      setError('Terjadi kesalahan saat menghapus filter')
+    })
+    .finally(() => {
+      setLoading(false)
+    })
   }
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    fetchMetadata(page)
+    fetchMetadata(page, sortBy, sortOrder)
   }
 
-  const fetchMetadata = async (page = currentPage) => {
+  const handleSortChange = (newSortBy: string) => {
+    const newSortOrder = sortBy === newSortBy && sortOrder === 'desc' ? 'asc' : 'desc'
+    setSortBy(newSortBy)
+    setSortOrder(newSortOrder)
+    setCurrentPage(1)
+
+    if (newSortBy === 'title') {
+      // For title sorting, sort client-side for better control
+      const sortedMetadata = [...metadata].sort((a, b) => {
+        const titleA = (a.title || '').toLowerCase()
+        const titleB = (b.title || '').toLowerCase()
+        if (newSortOrder === 'asc') {
+          return titleA.localeCompare(titleB, 'id', { sensitivity: 'base' })
+        } else {
+          return titleB.localeCompare(titleA, 'id', { sensitivity: 'base' })
+        }
+      })
+      setMetadata(sortedMetadata)
+    } else {
+      fetchMetadata(1, newSortBy, newSortOrder)
+    }
+  }
+
+  const fetchMetadataWithFilters = async (filterParams: typeof filters, page = currentPage, sort = sortBy, order = sortOrder) => {
     try {
       setLoading(true)
       setError(null)
@@ -78,12 +267,20 @@ export default function MetadataList() {
 
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '12' // Show 12 items per page for public view
+        limit: '12', // Show 12 items per page for public view
+        sortBy: sort,
+        sortOrder: order
       })
 
       // Add search and filter parameters
-      if (searchTerm) params.append('search', searchTerm)
-      if (filter !== 'all') params.append('status', filter)
+      if (searchQuery && searchQuery.trim() !== '') params.append('search', searchQuery.trim())
+      if (filterParams.category) params.append('category', filterParams.category)
+      if (filterParams.dataType) params.append('dataType', filterParams.dataType)
+      if (filterParams.format) params.append('format', filterParams.format)
+      if (filterParams.source) params.append('source', filterParams.source)
+      if (filterParams.status) params.append('status', filterParams.status)
+      if (filterParams.dateFrom) params.append('dateFrom', filterParams.dateFrom)
+      if (filterParams.dateTo) params.append('dateTo', filterParams.dateTo)
 
       const response = await fetch(`/api/metadata?${params}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -114,6 +311,10 @@ export default function MetadataList() {
     }
   }
 
+  const fetchMetadata = async (page = currentPage, sort = sortBy, order = sortOrder) => {
+    await fetchMetadataWithFilters(filters, page, sort, order)
+  }
+
   // Remove client-side filtering since we now use server-side pagination
 
   return (
@@ -130,29 +331,165 @@ export default function MetadataList() {
           <p className="text-lg text-gray-600">Browse and explore geospatial metadata from various sources</p>
         </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search and Filters */}
+        <div className="card mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Cari & Filter Metadata
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-4 mb-4">
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search metadata by title or description..."
-                value={searchTerm}
+                placeholder="Cari metadata berdasarkan judul, abstrak, atau kata kunci..."
+                value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                className="input-field"
               />
             </div>
-            <div className="flex gap-2">
-              <select
-                value={filter}
-                onChange={(e) => handleFilterChange(e.target.value as 'all' | 'published' | 'draft')}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-              >
-                <option value="all">All Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-              </select>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="btn-secondary inline-flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filter {showFilters ? '▲' : '▼'}
+            </button>
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                <select
+                  value={pendingFilters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">Semua Kategori</option>
+                  <option value="boundaries">Boundaries</option>
+                  <option value="biota">Biota</option>
+                  <option value="climatology">Climatology</option>
+                  <option value="economy">Economy</option>
+                  <option value="elevation">Elevation</option>
+                  <option value="environment">Environment</option>
+                  <option value="geoscientific">Geoscientific</option>
+                  <option value="health">Health</option>
+                  <option value="imagery">Imagery</option>
+                  <option value="oceans">Oceans</option>
+                  <option value="planning">Planning</option>
+                  <option value="society">Society</option>
+                  <option value="transportation">Transportation</option>
+                  <option value="utilities">Utilities</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Data</label>
+                <select
+                  value={pendingFilters.dataType}
+                  onChange={(e) => handleFilterChange('dataType', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">Semua Tipe</option>
+                  <option value="vector">Vector</option>
+                  <option value="grid">Grid</option>
+                  <option value="textTable">Text Table</option>
+                  <option value="tin">TIN</option>
+                  <option value="stereoModel">Stereo Model</option>
+                  <option value="video">Video</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                <select
+                  value={pendingFilters.format}
+                  onChange={(e) => handleFilterChange('format', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">Semua Format</option>
+                  <option value="GeoJSON">GeoJSON</option>
+                  <option value="Shapefile">Shapefile</option>
+                  <option value="GeoTIFF">GeoTIFF</option>
+                  <option value="GeoPackage">GeoPackage</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={pendingFilters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">Semua Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="planned">Planned</option>
+                  <option value="deprecated">Deprecated</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Dari</label>
+                <input
+                  type="date"
+                  value={pendingFilters.dateFrom}
+                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Sampai</label>
+                <input
+                  type="date"
+                  value={pendingFilters.dateTo}
+                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={applyFilters}
+                  disabled={isApplying}
+                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {applyingFilters ? 'Menerapkan...' : 'Terapkan Filter'}
+                </button>
+                <button
+                  onClick={clearFilters}
+                  className="btn-secondary w-full"
+                >
+                  Hapus Filter
+                </button>
+              </div>
             </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Sort by:</span>
+            <button
+              onClick={() => handleSortChange('title')}
+              className={`text-sm px-3 py-1 rounded ${sortBy === 'title' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              Title {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSortChange('createdAt')}
+              className={`text-sm px-3 py-1 rounded ${sortBy === 'createdAt' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              Date {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
           </div>
         </div>
 
@@ -192,19 +529,30 @@ export default function MetadataList() {
                 </svg>
                 <h3 className="text-xl font-medium text-gray-900 mb-2">No metadata found</h3>
                 <p className="text-gray-500 mb-6">
-                  {searchTerm || filter !== 'all'
-                    ? 'Try adjusting your search or filter criteria.'
-                    : 'No metadata entries are available at the moment.'}
+                  {searchQuery || Object.values(filters).some(v => v !== '')
+                    ? 'Coba sesuaikan kriteria pencarian atau filter Anda.'
+                    : 'Belum ada entri metadata yang tersedia saat ini.'}
                 </p>
-                {(searchTerm || filter !== 'all') && (
+                {(searchQuery || Object.values(filters).some(v => v !== '')) && (
                   <button
                     onClick={() => {
-                      setSearchTerm('')
-                      setFilter('all')
+                      setSearchQuery('')
+                      const emptyFilters = {
+                        category: '',
+                        dataType: '',
+                        format: '',
+                        source: '',
+                        status: '',
+                        dateFrom: '',
+                        dateTo: ''
+                      }
+                      setFilters(emptyFilters)
+                      setPendingFilters(emptyFilters)
+                      fetchMetadata(1, sortBy, sortOrder)
                     }}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition"
                   >
-                    Clear filters
+                    Hapus Filter
                   </button>
                 )}
               </div>
