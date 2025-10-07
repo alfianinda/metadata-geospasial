@@ -47,11 +47,35 @@ interface User {
   role: string
 }
 
+interface MetadataStats {
+  total: number
+  byStatus: {
+    published: number
+    draft: number
+  }
+  byDataType: {
+    vector: number
+    raster: number
+  }
+  byFormat: {
+    shapefile: number
+    geopackage: number
+    geotiff: number
+    geojson: number
+  }
+  bySource: {
+    internal: number
+    external: number
+  }
+  byCategory: Record<string, number>
+}
+
 export default function MetadataList() {
   const [metadata, setMetadata] = useState<Metadata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [stats, setStats] = useState<MetadataStats | null>(null)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState('createdAt')
@@ -101,6 +125,10 @@ export default function MetadataList() {
         clearTimeout(searchTimeout.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
   }, [])
 
   const checkAuthAndFetchMetadata = async () => {
@@ -315,6 +343,22 @@ export default function MetadataList() {
     await fetchMetadataWithFilters(filters, page, sort, order)
   }
 
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/metadata/stats', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
+
   // Remove client-side filtering since we now use server-side pagination
 
   return (
@@ -330,6 +374,38 @@ export default function MetadataList() {
           </h1>
           <p className="text-lg text-gray-600">Browse and explore geospatial metadata from various sources</p>
         </div>
+
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="card">
+              <div className="flex items-center">
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Metadata</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="flex items-center">
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Vector Data</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.byDataType.vector}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="card mb-8">
