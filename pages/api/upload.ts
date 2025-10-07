@@ -47,11 +47,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       })
     }
 
+    // Generate UUID for fileIdentifier if not provided
+    const fileIdentifier = metadataFields.fileIdentifier || `uuid:${crypto.randomUUID()}`
+
     // Create metadata record with parsed fields
     const metadata = await prisma.metadata.create({
       data: {
         // MD_Metadata Root
-        fileIdentifier: metadataFields.fileIdentifier || null,
+        fileIdentifier: fileIdentifier,
         language: metadataFields.language || 'ind',
         characterSet: metadataFields.characterSet || 'utf8',
         parentIdentifier: metadataFields.parentIdentifier || null,
