@@ -53,9 +53,8 @@ const nextConfig: NextConfig = {
     ]
   },
   // Experimental features for security
-  experimental: {
-    serverComponentsExternalPackages: []
-  },
+  experimental: {},
+  serverExternalPackages: [],
   // Production optimizations
   poweredByHeader: false,
   compress: true,

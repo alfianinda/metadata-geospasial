@@ -139,7 +139,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         resourceSpecificUsage: metadataFields.resourceSpecificUsage || null,
 
         // User relation
-        userId: userId
+        userId: userId,
+
+        // Data Access Level
+        accessLevel: metadataFields.accessLevel || 'open'
       }
     })
 

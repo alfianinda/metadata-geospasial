@@ -156,6 +156,9 @@ model Metadata {
   reviewStatus      String?  @default("draft") // draft, reviewed, approved
   approvalDate      DateTime?
 
+  // Data Access Level
+  accessLevel       String?  @default("open") // open, restricted
+
   // CKAN Integration
   ckanId            String?
   ckanUrl           String?

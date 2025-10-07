@@ -545,6 +545,9 @@ interface MetadataForm {
   sniStandard: string
   bahasa: string
 
+  // Data Access Level
+  accessLevel: string
+
   // File Information (auto-extracted)
   fileSize?: number
   originalFileName?: string
@@ -636,6 +639,7 @@ export default function Upload() {
     sniVersion: '1.0',
     sniStandard: 'SNI-ISO-19115-2019',
     bahasa: 'id',
+    accessLevel: 'open',
     // File Information (auto-extracted)
     fileSize: undefined,
     originalFileName: undefined,
@@ -2731,6 +2735,54 @@ export default function Upload() {
                       <option value="en">English</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Bahasa utama yang digunakan dalam metadata. Untuk Indonesia, gunakan "id"</p>
+                  </div>
+                </div>
+
+                {/* Data Access Level */}
+                <div className="grid grid-cols-1 gap-4 border-t border-gray-200 pt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tingkat Akses Data <span className="text-red-500">*</span>
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          id="access-open"
+                          name="accessLevel"
+                          value="open"
+                          checked={metadata.accessLevel === 'open'}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, accessLevel: e.target.value }))}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <label htmlFor="access-open" className="ml-3 block text-sm font-medium text-gray-700">
+                          <span className="font-semibold">Data Terbuka</span>
+                          <span className="block text-xs text-gray-500 mt-1">
+                            File dapat diakses oleh semua orang melalui halaman detail metadata
+                          </span>
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          id="access-restricted"
+                          name="accessLevel"
+                          value="restricted"
+                          checked={metadata.accessLevel === 'restricted'}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, accessLevel: e.target.value }))}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <label htmlFor="access-restricted" className="ml-3 block text-sm font-medium text-gray-700">
+                          <span className="font-semibold">Data Terbatas</span>
+                          <span className="block text-xs text-gray-500 mt-1">
+                            File tidak dapat diakses melalui halaman detail, hanya tersimpan di database untuk keperluan internal
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Pilih tingkat akses data. Data terbuka akan menampilkan file di halaman detail, data terbatas akan menyembunyikan file dari publik.
+                    </p>
                   </div>
                 </div>
 

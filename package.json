@@ -32,6 +32,7 @@
     "next": "15.5.2",
     "node-unrar": "^0.1.6",
     "nodemailer": "^7.0.6",
+    "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "shapefile": "^0.6.6",

@@ -385,8 +385,8 @@ export default function MetadataList() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Metadata</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-sm font-medium text-gray-600">Total Published Metadata</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.byStatus.published}</p>
                 </div>
               </div>
             </div>

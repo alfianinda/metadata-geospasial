@@ -696,6 +696,7 @@ interface Metadata {
   resourceMaintenance?: string
   additionalDocumentation?: string
   descriptiveKeywords?: string
+  accessLevel?: string
   createdAt: string
   updatedAt: string
   files: FileInfo[]
@@ -1768,46 +1769,67 @@ export default function MetadataDetail() {
               </button>
             </div>
 
-            {/* Associated Files */}
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Associated Files</h3>
-              <div className="space-y-4">
-                {metadata.files && metadata.files.length > 0 ? (
-                  metadata.files.map((file) => (
-                    <div key={file.id} className="bg-indigo-50 border-l-4 border-indigo-400 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-indigo-800 mb-1">{file.originalName}</div>
-                          <div className="text-xs text-gray-600">
-                            Size: {(file.size / 1024 / 1024).toFixed(2)} MB • Type: {file.mimetype}
+            {/* Associated Files - Only show if access level is 'open' */}
+            {metadata.accessLevel !== 'restricted' && (
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Associated Files</h3>
+                <div className="space-y-4">
+                  {metadata.files && metadata.files.length > 0 ? (
+                    metadata.files.map((file) => (
+                      <div key={file.id} className="bg-indigo-50 border-l-4 border-indigo-400 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-indigo-800 mb-1">{file.originalName}</div>
+                            <div className="text-xs text-gray-600">
+                              Size: {(file.size / 1024 / 1024).toFixed(2)} MB • Type: {file.mimetype}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Uploaded: {new Date(file.createdAt).toLocaleDateString('id-ID')}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Uploaded: {new Date(file.createdAt).toLocaleDateString('id-ID')}
-                          </div>
+                          {file.url && (
+                            <a
+                              href={file.url}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download
+                            </a>
+                          )}
                         </div>
-                        {file.url && (
-                          <a
-                            href={file.url}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Download
-                          </a>
-                        )}
                       </div>
+                    ))
+                  ) : (
+                    <div className="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-4 text-center">
+                      <div className="text-gray-500">No files associated with this metadata</div>
                     </div>
-                  ))
-                ) : (
-                  <div className="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-4 text-center">
-                    <div className="text-gray-500">No files associated with this metadata</div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Restricted Access Notice */}
+            {metadata.accessLevel === 'restricted' && (
+              <div className="border-t border-gray-200 pt-4">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <div>
+                      <h3 className="text-sm font-medium text-yellow-800">Restricted Access</h3>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        File terkait dengan metadata ini tidak dapat diakses secara publik.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Timestamps */}
             <div className="border-t border-gray-200 pt-4">
