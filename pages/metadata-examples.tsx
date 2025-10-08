@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '../components/Navbar'
 
-// Metadata entities hierarchy
 const metadataEntities = [
   {
     id: 'root',
     name: 'MD_Metadata (Root)',
     description: 'Informasi dasar dan pengaturan metadata geospasial',
+    detailedExplanation: 'Kategori ini menjelaskan identitas dasar dan pengaturan administratif dari metadata geospasial. Ini mencakup informasi fundamental seperti bahasa, format karakter, hierarki data, dan kontak pembuat metadata. Kategori ini menjawab pertanyaan: "Siapa yang membuat metadata ini?", "Dalam bahasa apa metadata ditulis?", dan "Bagaimana metadata ini terstruktur dalam sistem organisasi?".',
     required: true,
     children: [
       {
@@ -114,6 +114,7 @@ const metadataEntities = [
     id: 'identificationInfo',
     name: 'identificationInfo',
     description: 'Informasi utama yang mengidentifikasi dan mendeskripsikan dataset geospasial',
+    detailedExplanation: 'Kategori ini menjelaskan isi dan karakteristik utama dari dataset geospasial. Ini mencakup judul, deskripsi lengkap, tujuan penggunaan, klasifikasi tematik, resolusi spasial, dan cakupan geografis. Kategori ini menjawab pertanyaan: "Apa isi dataset ini?", "Untuk apa data ini digunakan?", "Di daerah mana data ini berlaku?", dan "Seberapa detail data ini?".',
     required: true,
     children: [
       {
@@ -250,6 +251,7 @@ const metadataEntities = [
     id: 'spatialRepresentationInfo',
     name: 'spatialRepresentationInfo',
     description: 'Informasi tentang bagaimana data geospasial direpresentasikan dan disimpan secara teknis',
+    detailedExplanation: 'Kategori ini menjelaskan struktur teknis dan format penyimpanan data geospasial. Ini mencakup tipe representasi (vektor vs raster), dimensi spasial, geometri sel, dan status koreksi geometri. Kategori ini menjawab pertanyaan: "Bagaimana data ini disimpan secara teknis?", "Apakah ini data titik/garis/polygon atau citra?", "Sudahkah data dikoreksi secara geometri?", dan "Bagaimana cara menampilkan data ini?".',
     required: false,
     children: [
       {
@@ -298,6 +300,7 @@ const metadataEntities = [
     id: 'referenceSystemInfo',
     name: 'referenceSystemInfo',
     description: 'Informasi tentang sistem koordinat dan referensi spasial yang digunakan dalam dataset',
+    detailedExplanation: 'Kategori ini menjelaskan sistem referensi spasial yang digunakan untuk memposisikan data di permukaan bumi. Ini mencakup kode EPSG, tipe sistem koordinat (geodetic/projected), dan parameter proyeksi. Kategori ini menjawab pertanyaan: "Dalam sistem koordinat apa data ini?", "Bagaimana cara menginterpretasikan koordinat X,Y?", dan "Apakah data ini kompatibel dengan GPS?".',
     required: false,
     children: [
       {
@@ -322,6 +325,7 @@ const metadataEntities = [
     id: 'contentInfo',
     name: 'contentInfo',
     description: 'Informasi detail tentang isi dan atribut data dalam dataset',
+    detailedExplanation: 'Kategori ini menjelaskan struktur dan isi atribut dari dataset geospasial. Ini mencakup deskripsi detail setiap kolom data, tipe data, dan klasifikasi isi (image, thematic, atau physical). Kategori ini menjawab pertanyaan: "Apa saja kolom data yang ada?", "Tipe data apa yang disimpan?", dan "Bagaimana cara menginterpretasikan nilai atribut?".',
     required: false,
     children: [
       {
@@ -346,6 +350,7 @@ const metadataEntities = [
     id: 'distributionInfo',
     name: 'distributionInfo',
     description: 'Informasi tentang bagaimana dataset dapat didistribusikan dan diakses',
+    detailedExplanation: 'Kategori ini menjelaskan cara mendapatkan dan mengakses dataset. Ini mencakup format distribusi, informasi distributor, URL akses online, dan opsi transfer data. Kategori ini menjawab pertanyaan: "Di mana saya bisa mendapatkan data ini?", "Dalam format apa data tersedia?", "Siapa yang bertanggung jawab distribusi?", dan "Bagaimana cara mengunduh data?".',
     required: false,
     children: [
       {
@@ -386,6 +391,7 @@ const metadataEntities = [
     id: 'dataQualityInfo',
     name: 'dataQualityInfo',
     description: 'Informasi tentang kualitas, akurasi, dan keandalan data geospasial',
+    detailedExplanation: 'Kategori ini menjelaskan kualitas dan keandalan data geospasial. Ini mencakup riwayat pengumpulan data, tingkat akurasi posisional dan atribut, kelengkapan data, dan konsistensi internal. Kategori ini menjawab pertanyaan: "Seberapa akurat data ini?", "Apakah data lengkap?", "Bagaimana data dikumpulkan?", dan "Apakah data bisa dipercaya?".',
     required: false,
     children: [
       {
@@ -434,6 +440,7 @@ const metadataEntities = [
     id: 'metadataConstraints',
     name: 'metadataConstraints',
     description: 'Ketentuan hukum dan pembatasan penggunaan metadata dan dataset terkait',
+    detailedExplanation: 'Kategori ini menjelaskan ketentuan hukum dan pembatasan penggunaan data. Ini mencakup lisensi, hak cipta, pembatasan akses, dan persyaratan khusus. Kategori ini menjawab pertanyaan: "Apakah saya boleh menggunakan data ini?", "Dalam kondisi apa saya boleh menggunakannya?", "Apakah ada lisensi yang berlaku?", dan "Siapa pemilik hak cipta data?".',
     required: false,
     children: [
       {
@@ -466,7 +473,7 @@ const metadataEntities = [
 
 export default function MetadataExamples() {
   const router = useRouter()
-  const [selectedEntity, setSelectedEntity] = useState<string | null>(null)
+  const [selectedEntity, setSelectedEntity] = useState<string | null>('root')
   const [selectedField, setSelectedField] = useState<string | null>(null)
   const [expandedEntities, setExpandedEntities] = useState<Set<string>>(new Set(['root', 'identificationInfo']))
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -513,6 +520,11 @@ export default function MetadataExamples() {
     setExpandedEntities(newExpanded)
   }
 
+  const selectEntity = (entityId: string) => {
+    setSelectedEntity(entityId)
+    setSelectedField(null)
+  }
+
   const selectField = (entityId: string, fieldId: string) => {
     setSelectedEntity(entityId)
     setSelectedField(fieldId)
@@ -540,8 +552,8 @@ export default function MetadataExamples() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold gradient-text mb-2">Panduan Field Metadata Geospasial</h1>
-            <p className="text-gray-600">Pelajari setiap field metadata sesuai standar ISO 19115, ISO 19139, dan SNI ISO 19115</p>
+            <h1 className="text-3xl font-bold gradient-text mb-2">Panduan Lengkap Metadata Geospasial</h1>
+            <p className="text-gray-600">Pelajari setiap kategori dan field metadata sesuai standar ISO 19115, ISO 19139, dan SNI ISO 19115. Klik kategori untuk memahami apa yang dijelaskan setiap bagian metadata.</p>
           </div>
         </div>
 
@@ -553,19 +565,29 @@ export default function MetadataExamples() {
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {metadataEntities.map((entity) => (
                   <div key={entity.id} className="border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => toggleEntity(entity.id)}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between"
-                    >
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900 truncate">{entity.name}</span>
-                      </div>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => selectEntity(entity.id)}
+                        className={`flex-1 text-left px-3 py-2 hover:bg-blue-50 flex items-center ${
+                          selectedEntity === entity.id && !selectedField ? 'bg-blue-100 border-r-2 border-blue-500' : ''
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${entity.required ? 'bg-red-400' : 'bg-green-400'}`}></span>
+                          <span className="text-sm font-medium text-gray-900 truncate">{entity.name}</span>
+                        </div>
+                      </button>
                       {entity.children && entity.children.length > 0 && (
-                        <svg className={`w-4 h-4 transition-transform ${expandedEntities.has(entity.id) ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        <button
+                          onClick={() => toggleEntity(entity.id)}
+                          className="px-2 py-2 hover:bg-gray-50"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${expandedEntities.has(entity.id) ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
                       )}
-                    </button>
+                    </div>
 
                     {expandedEntities.has(entity.id) && entity.children && (
                       <div className="border-t border-gray-100">
@@ -605,6 +627,61 @@ export default function MetadataExamples() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
+            {/* Category Overview */}
+            {selectedEntity && !selectedFieldData && (
+              <div className="card mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    metadataEntities.find(e => e.id === selectedEntity)?.required
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {metadataEntities.find(e => e.id === selectedEntity)?.required ? 'Wajib' : 'Opsional'}
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {metadataEntities.find(e => e.id === selectedEntity)?.name}
+                  </h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Deskripsi Kategori</h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      {metadataEntities.find(e => e.id === selectedEntity)?.description}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Apa yang Dijelaskan Kategori Ini?</h3>
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                      <p className="text-blue-800 leading-relaxed">
+                        {metadataEntities.find(e => e.id === selectedEntity)?.detailedExplanation}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Field dalam Kategori Ini</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {metadataEntities.find(e => e.id === selectedEntity)?.children?.map((field) => (
+                        <button
+                          key={field.id}
+                          onClick={() => selectField(selectedEntity, field.id)}
+                          className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-indigo-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-block w-2 h-2 rounded-full ${field.required ? 'bg-red-400' : 'bg-green-400'}`}></span>
+                            <span className="font-medium text-gray-900">{field.name}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 line-clamp-2">{field.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {selectedFieldData ? (
               <div className="card">
                 <div className="flex items-center gap-3 mb-6">
