@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build --turbopack",
-    "postbuild": "prisma db push --accept-data-loss && npm run seed",
+    "postbuild": "prisma db push --accept-data-loss",
     "seed": "tsx prisma/seed.ts",
     "start": "next start",
     "lint": "eslint"

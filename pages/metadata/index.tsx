@@ -345,10 +345,8 @@ export default function MetadataList() {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/metadata/stats', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      })
+      // Always use public stats for metadata repository page
+      const response = await fetch('/api/metadata/public-stats')
 
       if (response.ok) {
         const data = await response.json()
@@ -399,7 +397,7 @@ export default function MetadataList() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Vector Data</p>
+                  <p className="text-sm font-medium text-gray-600">Published Vector Data</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.byDataType.vector}</p>
                 </div>
               </div>

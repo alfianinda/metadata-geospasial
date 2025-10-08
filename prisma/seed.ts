@@ -6,6 +6,19 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting database seeding...')
 
+  // Check if database already has data
+  const existingMetadataCount = await prisma.metadata.count()
+  const existingUserCount = await prisma.user.count()
+
+  if (existingMetadataCount > 0 || existingUserCount > 0) {
+    console.log('ℹ️ Database already contains data. Skipping seeding to preserve existing data.')
+    console.log(`   - Existing users: ${existingUserCount}`)
+    console.log(`   - Existing metadata: ${existingMetadataCount}`)
+    return
+  }
+
+  console.log('📝 Database is empty, proceeding with seeding...')
+
   // Create admin user
   const email = 'admin@example.com'
   const password = 'admin123'

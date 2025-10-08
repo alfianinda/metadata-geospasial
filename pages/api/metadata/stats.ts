@@ -9,60 +9,65 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const token = getTokenFromRequest(req)
       const decoded = token ? verifyToken(token) : null
 
-      // Base where clause for public access (only published metadata)
-      let whereClause = {}
-      if (!decoded) {
-        whereClause = { isPublished: true }
-      }
+      // Always get total count (published + draft)
+      const totalCount = await prisma.metadata.count()
 
-      // Get total count
-      const totalCount = await prisma.metadata.count({
-        where: whereClause
+      // Always get published count
+      const publishedCount = await prisma.metadata.count({
+        where: { isPublished: true }
       })
 
-      // Get count by status (only for authenticated users)
-      let publishedCount = 0
+      // Get draft count (only for authenticated users)
       let draftCount = 0
       if (decoded) {
-        publishedCount = await prisma.metadata.count({
-          where: { ...whereClause, isPublished: true }
-        })
         draftCount = await prisma.metadata.count({
-          where: { ...whereClause, isPublished: false }
+          where: { isPublished: false }
         })
       }
 
-      // Get count by data type (from dataFormat field)
+      // Get count by data type (from spatialRepresentationType field)
+      // For dashboard (authenticated users): show all data
+      // For other uses: show published data
+      const dataTypeWhereClause = decoded ? {} : { isPublished: true }
+
       const vectorCount = await prisma.metadata.count({
         where: {
-          ...whereClause,
-          dataFormat: { in: ['GeoJSON', 'Shapefile'] }
+          ...dataTypeWhereClause,
+          spatialRepresentationType: 'vector'
         }
       })
       const rasterCount = await prisma.metadata.count({
         where: {
-          ...whereClause,
-          dataFormat: { in: ['GeoTIFF', 'TIFF'] }
+          ...dataTypeWhereClause,
+          spatialRepresentationType: 'grid'
         }
       })
 
-      // Get count by format (only for authenticated users)
+      // Get count by format (only for authenticated users) - use contains matching
       let shapefileCount = 0
       let geopackageCount = 0
       let geotiffCount = 0
       let geojsonCount = 0
       if (decoded) {
         shapefileCount = await prisma.metadata.count({
-          where: { ...whereClause, dataFormat: 'Shapefile' }
+          where: {
+            dataFormat: { contains: 'Shapefile' }
+          }
         })
         geopackageCount = await prisma.metadata.count({
-          where: { ...whereClause, dataFormat: 'GeoPackage' }
+          where: {
+            dataFormat: { contains: 'GeoPackage' }
+          }
         })
         geotiffCount = await prisma.metadata.count({
-          where: { ...whereClause, dataFormat: 'GeoTIFF' }
+          where: {
+            dataFormat: { contains: 'GeoTIFF' }
+          }
         })
         geojsonCount = await prisma.metadata.count({
-          where: { ...whereClause, dataFormat: 'GeoJSON' }
+          where: {
+            dataFormat: { contains: 'GeoJSON' }
+          }
         })
       }
 
